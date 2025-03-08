@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/go-mod
-          key: go-mod-${{ hashFiles('go.mod') }}
+          key: go-mod-${{ hashFiles('go.sum') }}
       - name: Mount Go Cache
         uses: reproducible-containers/buildkit-cache-dance@v2.1.2
         with:
