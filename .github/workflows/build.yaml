@@ -49,10 +49,20 @@ jobs:
         with:
           cache-source: /tmp/var-cache-apk
           cache-target: /var/cache/apk
+      - name: Cache Go mod
+        uses: actions/cache@v3
+        with:
+          path: /tmp/go-mod
+          key: go-mod-${{ hashFiles('go.mod') }}
+      - name: Mount Go Cache
+        uses: reproducible-containers/buildkit-cache-dance@v2.1.2
+        with:
+          cache-source: /tmp/go-mod
+          cache-target: /go/pkg/mod
       - name: Build ll-killer-go
         run: |
-          docker buildx build --platform linux/arm64,linux/amd64 -f Dockerfile . -o /tmp/build
-          docker buildx build --platform linux/loong64 -f Dockerfile . -o /tmp/build \
+          docker buildx build --platform linux/arm64,linux/amd64 -f Dockerfile . -o /tmp/build --cache-from=type=gha --cache-to=type=gha,mode=max
+          docker buildx build --platform linux/loong64 -f Dockerfile . -o /tmp/build --cache-from=type=gha --cache-to=type=gha,mode=max \
                               --build-arg XX_TRIPLE=loongarch64-alpine-linux-musl \
                               --build-arg XX_ALPINE_ARCH=loongarch64
           mv /tmp/build/linux_amd64/ll-killer ll-killer-amd64

@@ -15,7 +15,8 @@ RUN --mount=type=cache,target=/var/cache/apk \
 ENV CGO_ENABLED=1
 WORKDIR /app
 COPY . /app
-RUN GO=xx-go \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    GO=xx-go \
     GOARCH=`xx-info arch` \
     CC=xx-clang \
     TARGET=`xx-clang --print-target-triple` \
