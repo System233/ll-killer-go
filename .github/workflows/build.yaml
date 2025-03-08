@@ -39,17 +39,17 @@ jobs:
       #       fi
       #     fi
       - uses: docker/setup-buildx-action@v2
-      - name: Cache Apk Data
+      - name: Apk Cache
         uses: actions/cache@v3
         with:
-          path: /tmp/var-lib-apk
-          key: var-lib-apk-${{ hashFiles('Dockerfile') }}
+          path: /tmp/var-cache-apk
+          key: var-cache-apk-${{ hashFiles('Dockerfile') }}
       - name: Mount Apk Cache
         uses: reproducible-containers/buildkit-cache-dance@v2.1.2
         with:
           cache-source: /tmp/var-cache-apk
           cache-target: /var/cache/apk
-      - name: Cache Go mod
+      - name: Go Cache 
         uses: actions/cache@v3
         with:
           path: /tmp/go-mod
