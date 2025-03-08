@@ -42,12 +42,12 @@ jobs:
       - name: Cache Apk Data
         uses: actions/cache@v3
         with:
-          path: var-lib-apk
+          path: /tmp/var-lib-apk
           key: var-lib-apk-${{ hashFiles('Dockerfile') }}
       - name: Mount Apk Cache
         uses: reproducible-containers/buildkit-cache-dance@v2.1.2
         with:
-          cache-source: var-cache-apk
+          cache-source: /tmp/var-cache-apk
           cache-target: /var/cache/apk
       - name: Build ll-killer-go
         run: |
