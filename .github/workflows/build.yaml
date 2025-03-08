@@ -17,27 +17,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Install git-chglog
-        run: |
-          go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
-      - name: Generate Changelog
-        run: |
-          git-chglog -o RELEASE.md ${{github.ref_name}}
-      - name: Update Changelog
-        if: ${{ env.dev == 'false' }}
-        run: |
-          if ! grep -Fq "[${{github.ref_name}}]" CHANGELOG.md;then
-            cat RELEASE.md CHANGELOG.md > CHANGELOG.NEW.md || true
-            mv CHANGELOG.NEW.md CHANGELOG.md
-            git add CHANGELOG.md
-            if ! git diff --cached --quiet;then
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git commit -m "更新 CHANGELOG.md"
-              git push origin main
-            fi
-          fi
+          submodules: true
+      # - name: Install git-chglog
+      #   run: |
+      #     go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
+      # - name: Generate Changelog
+      #   run: |
+      #     git-chglog -o RELEASE.md ${{github.ref_name}}
+      # - name: Update Changelog
+      #   if: ${{ env.dev == 'false' }}
+      #   run: |
+      #     if ! grep -Fq "[${{github.ref_name}}]" CHANGELOG.md;then
+      #       cat RELEASE.md CHANGELOG.md > CHANGELOG.NEW.md || true
+      #       mv CHANGELOG.NEW.md CHANGELOG.md
+      #       git add CHANGELOG.md
+      #       if ! git diff --cached --quiet;then
+      #         git config user.name "github-actions[bot]"
+      #         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #         git commit -m "更新 CHANGELOG.md"
+      #         git push origin main
+      #       fi
+      #     fi
       - uses: docker/setup-buildx-action@v2
       - name: Cache Apk Data
         uses: actions/cache@v3
