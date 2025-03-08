@@ -1,0 +1,4 @@
+[submodule "fuse-overlayfs"]
+	path = fuse-overlayfs
+	url = https://github.com/containers/fuse-overlayfs.git
+	branch = main

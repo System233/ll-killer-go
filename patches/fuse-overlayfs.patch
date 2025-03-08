@@ -1,0 +1,26 @@
+diff --git a/Makefile.am b/Makefile.am
+index 9708b51..475d4f9 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,6 +1,7 @@
+ SUBDIRS = lib
+ 
+-bin_PROGRAMS = fuse-overlayfs
++STATICdir = $(libdir)
++STATIC_LIBRARIES  = libfuse-overlayfs.a
+ 
+ ACLOCAL_AMFLAGS = -Im4
+ 
+@@ -8,10 +9,8 @@ EXTRA_DIST = m4/gnulib-cache.m4 rpm/fuse-overlayfs.spec.template autogen.sh fuse
+ 
+ AM_CPPFLAGS = -DPKGLIBEXECDIR='"$(pkglibexecdir)"'
+ 
+-fuse_overlayfs_CFLAGS = -I . -I $(abs_srcdir)/lib $(FUSE_CFLAGS)
+-fuse_overlayfs_LDFLAGS =
+-fuse_overlayfs_LDADD = lib/libgnu.a $(FUSE_LIBS)
+-fuse_overlayfs_SOURCES = main.c direct.c utils.c plugin-manager.c
++libfuse_overlayfs_a_CFLAGS = -Dmain=fuse_ovl_main -I . -I $(abs_srcdir)/lib $(FUSE_CFLAGS)
++libfuse_overlayfs_a_SOURCES = main.c direct.c utils.c plugin-manager.c
+ 
+ WD := $(shell pwd)
+ 

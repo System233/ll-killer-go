@@ -3,5 +3,5 @@ linglong
 *.uab
 *.log
 tests
-fuse-overlayfs
 /ll-killer
+*.a

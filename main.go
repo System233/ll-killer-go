@@ -58,7 +58,8 @@ func main() {
 		CreateCleanCommand(),
 		CreateExportCommand(),
 		CreateBuildAuxCommand(),
-		CreateScriptCommand())
+		CreateScriptCommand(),
+		CreateOverlayCommand())
 	app.Version = fmt.Sprintf("%s/%s", Version, BuildTime)
 	if ptrace.IsSupported {
 		app.AddCommand(CreatePtraceCommand())
