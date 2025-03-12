@@ -1,18 +1,13 @@
 name: Build
 permissions:
-    contents: write
+  contents: write
 on:
   push:
-    tags:
-      - 'v*' 
   workflow_dispatch:
-
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      dev: ${{contains(github.ref_name,'dev')}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -22,8 +17,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-            go-version-file: 'go.mod'
-            cache: true
+          go-version-file: "go.mod"
+          cache: true
       - name: Install git-chglog
         run: |
           go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
@@ -41,7 +36,7 @@ jobs:
         with:
           cache-source: /tmp/var-cache-apk
           cache-target: /var/cache/apk
-      - name: Go Cache 
+      - name: Go Cache
         uses: actions/cache@v3
         with:
           path: /tmp/go-mod
@@ -61,7 +56,7 @@ jobs:
           mv /tmp/build/linux_arm64/ll-killer ll-killer-arm64
           mv /tmp/build/ll-killer ll-killer-loong64
           sha1sum ll-killer-* >ll-killer.sha1sum
-          
+
           XDASH='```'
           cat >> RELEASE.md <<EOF
           ## SHA1哈希值
@@ -72,10 +67,11 @@ jobs:
       - name: Verify
         run: |
           file ll-killer-*
-      - name: Upload release assets
+      - name: Release
+        if: ${{ contains(github.ref,'refs/tags/') && startsWith(github.ref_name,'v') }}
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: ${{env.dev}}
+          prerelease: ${{ contains(github.ref_name,'dev') }}
           body_path: ./RELEASE.md
           files: |
             ./ll-killer-*

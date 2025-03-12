@@ -39,8 +39,9 @@ $(FUSE_LIBS): $(FUSE_SRCS)
 	cp $(FUSE_DIR)/lib/libgnu.a \
 	   $(FUSE_DIR)/libfuse-overlayfs.a .
 
-
-test: $(GO_TEST_SOURCES)
+test: ll-killer $(GO_TEST_SOURCES)
 	$(GO) test -ldflags "$(LDFLAGS) $(LDFLAGS_STATIC) $(EXTRA_LDFLAGS)" $(GO_TEST_DIRS)
 
-.PHONY: test
+all: ll-killer test
+
+.PHONY: all test

@@ -22,6 +22,6 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     GOARCH=`xx-info arch` \
     CC=xx-clang \
     TARGET=`xx-clang --print-target-triple` \
-    make
+    make all
 FROM scratch
 COPY --from=build /app/ll-killer /ll-killer
