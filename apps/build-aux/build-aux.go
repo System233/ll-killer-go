@@ -10,6 +10,7 @@ import (
 	"embed"
 	"errors"
 	"io/fs"
+	"ll-killer/config"
 	"ll-killer/utils"
 	"log"
 	"os"
@@ -89,7 +90,7 @@ func embedFilesToDisk(destDir string, force bool) error {
 }
 
 func SetupKillerExec(target string) error {
-	if !BuildAuxFlag.Force && utils.IsExist(utils.KillerExec) {
+	if !BuildAuxFlag.Force && utils.IsExist(config.KillerExec) {
 		log.Println("skip:", target)
 		return nil
 	}
@@ -116,7 +117,7 @@ func ExtractBuildAuxFiles(force bool) error {
 	if err := embedFilesToDisk(".", force); err != nil {
 		return err
 	}
-	if err := SetupKillerExec(utils.KillerExec); err != nil {
+	if err := SetupKillerExec(config.KillerExec); err != nil {
 		return err
 	}
 	return nil

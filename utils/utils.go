@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"ll-killer/config"
 	"log"
 	"os"
 	"os/exec"
@@ -20,34 +21,6 @@ import (
 
 	"github.com/go-yaml/yaml"
 	"github.com/moby/sys/reexec"
-)
-
-const (
-	KillerExec        = "ll-killer"
-	KillerExecEnv     = "KILLER_EXEC"
-	KillerPackerEnv   = "KILLER_PACKER"
-	FileSystemDir     = "linglong/filesystem"
-	UpperDirName      = "diff"
-	LowerDirName      = "overwrite"
-	WorkDirName       = "work"
-	MergedDirName     = "merged"
-	SourceListFile    = "sources.list"
-	AptDir            = "linglong/apt"
-	AptDataDir        = AptDir + "/data"
-	AptCacheDir       = AptDir + "/cache"
-	AptConfDir        = "apt.conf.d"
-	AptConfFile       = AptConfDir + "/ll-killer.conf"
-	LinglongYaml      = "linglong.yaml"
-	KillerCommands    = "KILLER_COMMANDS"
-	KillerDebug       = "KILLER_DEBUG"
-	MountArgsSep      = ":"
-	MountArgsItemSep  = "+"
-	FuseOverlayFSType = "fuse-overlayfs"
-)
-
-var (
-	Version   = "unknown"
-	BuildTime = "unknown"
 )
 
 var GlobalFlag struct {
@@ -178,7 +151,7 @@ func Mount(opt *MountOption) error {
 	}
 	if opt.FSType == "merge" {
 		filesystem := make(map[string]string)
-		excludes := append([]string{opt.Target}, strings.Split(opt.Data, MountArgsItemSep)...)
+		excludes := append([]string{opt.Target}, strings.Split(opt.Data, config.MountArgsItemSep)...)
 		if opt.Data == "" {
 			excludes = append(excludes, "/tmp", "/proc", "/dev", "/sys", "/run", "/var/run")
 		}
@@ -193,7 +166,7 @@ func Mount(opt *MountOption) error {
 		if err != nil {
 			return err
 		}
-		sources := strings.Split(opt.Source, MountArgsItemSep)
+		sources := strings.Split(opt.Source, config.MountArgsItemSep)
 		for index, path := range sources {
 			result, err := filepath.Abs(path)
 			if err != nil {
@@ -213,7 +186,7 @@ func Mount(opt *MountOption) error {
 		}
 		return nil
 	}
-	if opt.FSType == FuseOverlayFSType || opt.FSType == "ifovl" {
+	if opt.FSType == config.FuseOverlayFSType || opt.FSType == "ifovl" {
 		fuseOverlayFSArgs := []string{"-o", opt.Data, opt.Target}
 		if GlobalFlag.FuseOverlayFSArgs != "" {
 			fuseOverlayFSArgs = append(fuseOverlayFSArgs, strings.Split(GlobalFlag.FuseOverlayFSArgs, " ")...)
@@ -365,7 +338,7 @@ var MountFlagMap = map[string]int{
 }
 
 func ParseMountFlag(flag string) int {
-	flags := strings.Split(flag, MountArgsItemSep)
+	flags := strings.Split(flag, config.MountArgsItemSep)
 	value := 0
 	for _, flag := range flags {
 		if flag == "" {
@@ -381,7 +354,7 @@ func ParseMountFlag(flag string) int {
 	return value
 }
 func ParseMountOption(item string) MountOption {
-	chunks := strings.SplitN(item, MountArgsSep, 5)
+	chunks := strings.SplitN(item, config.MountArgsSep, 5)
 	opt := MountOption{}
 	if len(chunks) >= 2 {
 		opt.Source = chunks[0]
@@ -521,8 +494,8 @@ func BuildHelpMessage(help string) string {
 	return strings.ReplaceAll(help, "<program>", os.Args[0])
 }
 func SetupEnvVar() error {
-	if os.Getenv(KillerExecEnv) == "" {
-		path, err := exec.LookPath(KillerExec)
+	if os.Getenv(config.KillerExecEnv) == "" {
+		path, err := exec.LookPath(config.KillerExec)
 		if err != nil {
 			path, err = filepath.Abs(os.Args[0])
 			if err != nil {
@@ -530,7 +503,7 @@ func SetupEnvVar() error {
 			}
 			os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Dir(path)))
 		}
-		os.Setenv(KillerExecEnv, path)
+		os.Setenv(config.KillerExecEnv, path)
 	}
 	return nil
 }

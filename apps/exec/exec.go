@@ -8,6 +8,7 @@ package _exec
 
 import (
 	"fmt"
+	"ll-killer/config"
 	"ll-killer/pty"
 	"ll-killer/utils"
 	"log"
@@ -207,7 +208,7 @@ func MountFileSystem() {
 			}
 			log.Println(err)
 		}
-		if opt.FSType == utils.FuseOverlayFSType {
+		if opt.FSType == config.FuseOverlayFSType {
 			isFuseOverlayFs = true
 		}
 	}

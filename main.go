@@ -22,6 +22,7 @@ import (
 	_ptrace "ll-killer/apps/ptrace"
 	_run "ll-killer/apps/run"
 	_script "ll-killer/apps/script"
+	"ll-killer/config"
 	"ll-killer/utils"
 	"log"
 	"os"
@@ -46,7 +47,7 @@ const MainCommandHelp = `ll-killer 是一个工具，旨在解决玲珑容器应
 `
 
 func main() {
-	if os.Getenv(utils.KillerDebug) != "" {
+	if os.Getenv(config.KillerDebug) != "" {
 		utils.GlobalFlag.Debug = true
 	}
 	err := utils.SetupEnvVar()
@@ -83,7 +84,7 @@ func main() {
 		_script.CreateScriptCommand(),
 		_overlay.CreateOverlayCommand(),
 		_nsenter.NsEnterNsEnterCommand())
-	app.Version = fmt.Sprintf("%s/%s", utils.Version, utils.BuildTime)
+	app.Version = fmt.Sprintf("%s/%s", config.Version, config.BuildTime)
 	if _ptrace.IsSupported {
 		app.AddCommand(_ptrace.CreatePtraceCommand())
 	}

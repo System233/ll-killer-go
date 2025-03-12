@@ -7,6 +7,7 @@
 package _apt
 
 import (
+	"ll-killer/config"
 	"ll-killer/utils"
 	"os"
 	"syscall"
@@ -39,11 +40,11 @@ func MountAPT() {
 		    apt -o APT::Sandbox::User="root" update -y
 		    reexec shell
 	*/
-	err := os.MkdirAll(utils.AptDir, 0755)
+	err := os.MkdirAll(config.AptDir, 0755)
 	if err != nil {
 		utils.ExitWith(err)
 	}
-	err = utils.MkdirAlls([]string{utils.AptDataDir, utils.AptCacheDir, utils.AptConfDir}, 0755)
+	err = utils.MkdirAlls([]string{config.AptDataDir, config.AptCacheDir, config.AptConfDir}, 0755)
 	if err != nil {
 		utils.ExitWith(err)
 	}
@@ -74,12 +75,12 @@ func MountAPT() {
 			Flags:  syscall.MS_BIND,
 		},
 		{
-			Source: utils.AptDataDir,
+			Source: config.AptDataDir,
 			Target: "/var/lib/apt",
 			Flags:  syscall.MS_BIND,
 		},
 		{
-			Source: utils.AptCacheDir,
+			Source: config.AptCacheDir,
 			Target: "/var/cache",
 			Flags:  syscall.MS_BIND,
 		},

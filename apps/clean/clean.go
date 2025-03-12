@@ -7,6 +7,7 @@
 package _clean
 
 import (
+	"ll-killer/config"
 	"ll-killer/utils"
 
 	"github.com/spf13/cobra"
@@ -19,14 +20,14 @@ var CleanFlag struct {
 
 func CleanMain(cmd *cobra.Command, args []string) error {
 	if CleanFlag.FileSystem {
-		err := utils.RunCommand("rm", "-rf", utils.FileSystemDir)
+		err := utils.RunCommand("rm", "-rf", config.FileSystemDir)
 		if err != nil {
 			return err
 		}
 	}
 
 	if CleanFlag.APT {
-		err := utils.RunCommand("rm", "-rf", utils.AptDir)
+		err := utils.RunCommand("rm", "-rf", config.AptDir)
 		if err != nil {
 			return err
 		}

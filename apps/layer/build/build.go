@@ -9,6 +9,7 @@ package _build
 import (
 	"encoding/json"
 	"fmt"
+	"ll-killer/config"
 	"ll-killer/layer"
 	"ll-killer/types"
 	"ll-killer/utils"
@@ -134,7 +135,7 @@ func PostPackUp(workDir string) {
 }
 
 func SetupFilesystem(workDir string) {
-	data, err := os.ReadFile(utils.LinglongYaml)
+	data, err := os.ReadFile(config.LinglongYaml)
 	if err != nil {
 		utils.ExitWith(err)
 	}
@@ -244,9 +245,9 @@ func RunPostSetup(workDir string) {
 	}
 }
 func BuildLayer() {
-	killerPackerEnv := os.Getenv(utils.KillerPackerEnv)
+	killerPackerEnv := os.Getenv(config.KillerPackerEnv)
 	if killerPackerEnv == "" {
-		os.Setenv(utils.KillerPackerEnv, "1")
+		os.Setenv(config.KillerPackerEnv, "1")
 	}
 	workDir := "linglong/output"
 	log.Println("[准备构建环境]")

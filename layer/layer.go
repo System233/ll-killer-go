@@ -146,7 +146,7 @@ func normalizeComponent(input, defaultChannel, defaultArch string) (string, erro
 	version = parts[len(parts)-1]
 
 	// 验证版本格式
-	if !isValidVersion(version) {
+	if !IsValidComponentVersion(version) {
 		return "", fmt.Errorf("invalid version format: %s", version)
 	}
 
@@ -167,7 +167,7 @@ func isValidArch(arch string) bool {
 
 var versionPartRegex = regexp.MustCompile(`^(0|[1-9]\d*)$`)
 
-func isValidVersion(version string) bool {
+func IsValidComponentVersion(version string) bool {
 	parts := strings.Split(version, ".")
 	if len(parts) < 2 || len(parts) > 4 {
 		return false
@@ -467,4 +467,20 @@ func Dump(target string) error {
 		return err
 	}
 	return header.PrintAll()
+}
+
+func NormalizeVersion(version string) string {
+	re := regexp.MustCompile(`\D`)
+	chunks := strings.SplitN(version, ".", 4)
+	for index, chunk := range chunks {
+		version := strings.TrimLeft(strings.TrimSpace(re.ReplaceAllString(chunk, "")), "0")
+		if version == "" {
+			version = "0"
+		}
+		chunks[index] = version
+	}
+	for len(chunks) < 4 {
+		chunks = append(chunks, "0")
+	}
+	return strings.Join(chunks, ".")
 }

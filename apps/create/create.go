@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io"
 	buildaux "ll-killer/apps/build-aux"
+	"ll-killer/config"
+	"ll-killer/layer"
 	"ll-killer/types"
 	"ll-killer/utils"
 	"log"
@@ -51,22 +53,6 @@ apt show app >pkg.info
 <program> create --id appId --from pkg.info
 `
 
-// TODO: 单元测试
-func NormalizeVersion(version string) string {
-	re := regexp.MustCompile(`\D`)
-	chunks := strings.SplitN(version, ".", 4)
-	for index, chunk := range chunks {
-		version := strings.TrimLeft(strings.TrimSpace(re.ReplaceAllString(chunk, "")), "0")
-		if version == "" {
-			version = "0"
-		}
-		chunks[index] = version
-	}
-	for len(chunks) < 4 {
-		chunks = append(chunks, "0")
-	}
-	return strings.Join(chunks, ".")
-}
 func SetupPackageMetadata(cmd *cobra.Command) error {
 
 	if CreateFlag.Metadata == "" {
@@ -82,7 +68,7 @@ func SetupPackageMetadata(cmd *cobra.Command) error {
 		ConfigData.Package.Description = metadata["description"]
 	}
 	if !cmd.Flags().Changed("version") && metadata["version"] != "" {
-		ConfigData.Package.Version = NormalizeVersion(metadata["version"])
+		ConfigData.Package.Version = layer.NormalizeVersion(metadata["version"])
 	}
 	if !cmd.Flags().Changed("id") && metadata["package"] != "" {
 		ConfigData.Package.ID = metadata["package"]
@@ -97,7 +83,7 @@ func SetupPackageMetadata(cmd *cobra.Command) error {
 		ConfigData.Package.Name = metadata["runtime"]
 	}
 	if metadata["apt-sources"] != "" {
-		if CreateFlag.Force || !utils.IsExist(utils.SourceListFile) {
+		if CreateFlag.Force || !utils.IsExist(config.SourceListFile) {
 			re := regexp.MustCompile(`^(http\S+?)\s+(\S+?)/(\S+)`)
 			entries := strings.Split(metadata["apt-sources"], "\n")
 			parsed := []string{}
@@ -123,14 +109,14 @@ func SetupPackageMetadata(cmd *cobra.Command) error {
 				parsed = append(parsed, entry)
 			}
 			if len(parsed) > 0 {
-				err := utils.WriteFile(utils.SourceListFile, []byte(strings.Join(parsed, "\n")), 0755, CreateFlag.Force)
+				err := utils.WriteFile(config.SourceListFile, []byte(strings.Join(parsed, "\n")), 0755, CreateFlag.Force)
 				if err != nil {
 					return err
 				}
-				log.Println("created: ", utils.SourceListFile)
+				log.Println("created: ", config.SourceListFile)
 			}
 		} else {
-			log.Println("skip: ", utils.SourceListFile)
+			log.Println("skip: ", config.SourceListFile)
 		}
 	}
 	return nil
@@ -193,11 +179,11 @@ func ParsePackageMetadata(stream io.Reader) (map[string]string, error) {
 func SetupProject(target string) error {
 	ConfigData.Command[0] = strings.ReplaceAll(ConfigData.Command[0], "<APPID>", ConfigData.Package.ID)
 
-	err := utils.DumpYaml(utils.LinglongYaml, ConfigData)
+	err := utils.DumpYaml(config.LinglongYaml, ConfigData)
 	if err != nil {
 		return err
 	}
-	log.Println("created:", utils.LinglongYaml)
+	log.Println("created:", config.LinglongYaml)
 	return nil
 }
 
@@ -211,7 +197,7 @@ func CreateMain(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := SetupProject(utils.LinglongYaml); err != nil {
+	if err := SetupProject(config.LinglongYaml); err != nil {
 		return err
 	}
 

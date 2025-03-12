@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	_ptrace "ll-killer/apps/ptrace"
+	"ll-killer/config"
 	"ll-killer/utils"
 	"os"
 	"path"
@@ -92,7 +93,7 @@ func GetBuildArgs() []string {
 
 func MountOverlayStage2() {
 
-	overlayDir := path.Join(BuildFlag.CWD, utils.FileSystemDir)
+	overlayDir := path.Join(BuildFlag.CWD, config.FileSystemDir)
 	mergedDir := path.Join(overlayDir, "merged")
 	tmpRootFS := BuildFlag.TmpRootFS
 	err := syscall.PivotRoot(tmpRootFS+mergedDir, tmpRootFS+mergedDir+BuildFlag.RootFS)
@@ -107,14 +108,14 @@ func MountOverlayStage2() {
 
 }
 func MountOverlay() {
-	overlayDir := path.Join(BuildFlag.CWD, utils.FileSystemDir)
-	aptCacheDir := path.Join(BuildFlag.CWD, utils.AptCacheDir)
-	aptDataDir := path.Join(BuildFlag.CWD, utils.AptDataDir)
+	overlayDir := path.Join(BuildFlag.CWD, config.FileSystemDir)
+	aptCacheDir := path.Join(BuildFlag.CWD, config.AptCacheDir)
+	aptDataDir := path.Join(BuildFlag.CWD, config.AptDataDir)
 	tmpRootFS := BuildFlag.TmpRootFS
-	upperDir := path.Join(overlayDir, utils.UpperDirName)
-	lowerDir := path.Join(overlayDir, utils.LowerDirName)
-	workDir := path.Join(overlayDir, utils.WorkDirName)
-	mergedDir := path.Join(overlayDir, utils.MergedDirName)
+	upperDir := path.Join(overlayDir, config.UpperDirName)
+	lowerDir := path.Join(overlayDir, config.LowerDirName)
+	workDir := path.Join(overlayDir, config.WorkDirName)
+	mergedDir := path.Join(overlayDir, config.MergedDirName)
 	cwdRootFSPivoted := fmt.Sprint(BuildFlag.RootFS, tmpRootFS)
 	err := utils.MkdirAlls([]string{
 		tmpRootFS, upperDir, lowerDir, workDir,
