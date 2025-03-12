@@ -14,6 +14,7 @@ options:
       break: 兼容性更改
       build: 构建系统
       chore: 代码调整
+      improvement: 功能改进
     
   tag_filter_pattern: ^v\d+\.\d+\.\d+$
   header:

@@ -1,4 +1,20 @@
 
+<a name="v1.4.6"></a>
+## [v1.4.6](https://github.com/System233/ll-killer-go/compare/v1.4.5...v1.4.6) (2025-03-13)
+
+### 代码重构
+
+* 切换到 gopkg.in/yaml.v2
+
+### 功能改进
+
+* 完善基于Makefile的玲珑项目管理
+
+### 错误修复
+
+* 在apt环境中屏蔽来自主机的包缓存
+
+
 <a name="v1.4.5"></a>
 ## [v1.4.5](https://github.com/System233/ll-killer-go/compare/v1.4.4...v1.4.5) (2025-03-12)
 
