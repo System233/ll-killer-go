@@ -42,7 +42,7 @@ const MainCommandHelp = `ll-killer 是一个工具，旨在解决玲珑容器应
   commit  提交构建内容至玲珑容器。
   run     运行已构建的应用进行测试。
 
-运行 "github.com/System233/ll-killer-go <command> --help" 以查看子命令的详细信息。
+运行 "<program> <command> --help" 以查看子命令的详细信息。
 
 更多信息请查看项目主页: https://github.com/System233/ll-killer-go.git
 `
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	app := cobra.Command{
-		Use:     "github.com/System233/ll-killer-go",
+		Use:     config.KillerExec,
 		Short:   Usage,
 		Example: utils.BuildHelpMessage(MainCommandHelp),
 	}
