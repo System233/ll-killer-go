@@ -1,4 +1,12 @@
 
+<a name="v1.4.7"></a>
+## [v1.4.7](https://github.com/System233/ll-killer-go/compare/v1.4.6...v1.4.7) (2025-03-13)
+
+### 错误修复
+
+* 修复某些apt提示找不到status文件
+
+
 <a name="v1.4.6"></a>
 ## [v1.4.6](https://github.com/System233/ll-killer-go/compare/v1.4.5...v1.4.6) (2025-03-13)
 
