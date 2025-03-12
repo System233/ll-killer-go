@@ -1,4 +1,12 @@
 
+<a name="v1.4.9"></a>
+## [v1.4.9](https://github.com/System233/ll-killer-go/compare/v1.4.8...v1.4.9) (2025-03-13)
+
+### 错误修复
+
+* 更正Makefile中安装的缺失库文件列表
+
+
 <a name="v1.4.8"></a>
 ## [v1.4.8](https://github.com/System233/ll-killer-go/compare/v1.4.7...v1.4.8) (2025-03-13)
 
