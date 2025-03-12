@@ -10,7 +10,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	buildaux "ll-killer/apps/build-aux"
+	buildaux "ll-killer/build-aux"
 	"ll-killer/config"
 	"ll-killer/layer"
 	"ll-killer/types"
