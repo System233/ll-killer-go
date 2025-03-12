@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const PackCommandHelp = `将文件夹打包为layer,此命令使用mkfs.erofs对layer结构目录进行打包，从而无需ll-builder提交到ostree，减少不必要的文件复制。
+const PackCommandHelp = `将指定的layer结构文件夹打包为layer,此命令使用mkfs.erofs对layer结构目录进行打包，从而无需ll-builder提交到ostree，减少不必要的文件复制。
 
 本功能的目的是消除~/.cache/linglong-builder下不必要的应用缓存，保护磁盘寿命。
 * 源文件夹需要为合法的layer结构，参考linglong/output/binary目录。
@@ -42,8 +42,8 @@ func PackMain(cmd *cobra.Command, args []string) error {
 
 func CreatePackCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "pack <源文件夹> [flags] -- [mkfs.erofs选项]",
-		Short:         "将文件夹打包为layer。",
+		Use:           "pack <layer结构文件夹> [flags] -- [mkfs.erofs选项]",
+		Short:         "将指定的layer结构文件夹打包为layer。",
 		Long:          utils.BuildHelpMessage(PackCommandHelp),
 		SilenceErrors: true,
 		SilenceUsage:  true,

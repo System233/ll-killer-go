@@ -47,7 +47,7 @@ func DumpMain(cmd *cobra.Command, args []string) error {
 
 func CreateDumpCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "dump <layer文件> -- [dump.erofs选项]",
+		Use:   "dump <layer文件> [flags] -- [dump.erofs选项]",
 		Short: "输出layer信息。",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

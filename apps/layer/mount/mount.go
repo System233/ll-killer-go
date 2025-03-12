@@ -25,8 +25,8 @@ func MountMain(cmd *cobra.Command, args []string) error {
 
 func CreateMountCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "mount <layer文件名> <源目录>  -- [erofsfuse选项]",
-		Short: "挂载layer文件。",
+		Use:   "mount <layer文件名> <layer挂载目录> [flags] -- [erofsfuse选项]",
+		Short: "挂载layer文件到指定的挂载目录。",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			i := 1
