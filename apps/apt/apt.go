@@ -45,7 +45,12 @@ func MountAPT() {
 	if err != nil {
 		utils.ExitWith(err)
 	}
-	err = utils.MkdirAlls([]string{config.AptDataDir, config.AptCacheDir, config.AptConfDir}, 0755)
+	err = utils.MkdirAlls([]string{
+		config.AptDataDir, 
+		config.AptCacheDir, 
+		config.AptConfDir,
+		config.AptDpkgDir,
+		}, 0755)
 	if err != nil {
 		utils.ExitWith(err)
 	}
@@ -83,6 +88,11 @@ func MountAPT() {
 		{
 			Source: config.AptCacheDir,
 			Target: "/var/cache",
+			Flags:  syscall.MS_BIND,
+		},
+		{
+			Source: config.AptDpkgDir,
+			Target: "/var/lib/dpkg",
 			Flags:  syscall.MS_BIND,
 		},
 	})

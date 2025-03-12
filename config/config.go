@@ -19,6 +19,7 @@ const (
 	AptDir            = "linglong/apt"
 	AptDataDir        = AptDir + "/data"
 	AptCacheDir       = AptDir + "/cache"
+	AptDpkgDir        = AptDir + "/dpkg"
 	AptConfDir        = "apt.conf.d"
 	AptConfFile       = AptConfDir + "/ll-killer.conf"
 	LinglongYaml      = "linglong.yaml"
