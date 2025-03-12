@@ -19,13 +19,12 @@ import (
 	buildaux "github.com/System233/ll-killer-go/build-aux"
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/layer"
-	"github.com/System233/ll-killer-go/types"
 	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )
 
-var ConfigData types.Config
+var ConfigData layer.Config
 var CreateFlag struct {
 	NoBuild  bool
 	Force    bool
@@ -180,7 +179,7 @@ func ParsePackageMetadata(stream io.Reader) (map[string]string, error) {
 func SetupProject(target string) error {
 	ConfigData.Command[0] = strings.ReplaceAll(ConfigData.Command[0], "<APPID>", ConfigData.Package.ID)
 
-	err := utils.DumpYaml(config.LinglongYaml, ConfigData)
+	err := utils.DumpYamlFile(config.LinglongYaml, ConfigData)
 	if err != nil {
 		return err
 	}
@@ -212,7 +211,7 @@ func CreateCreateCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "create",
-		Short:   "创建模板项目",
+		Short:   "创建玲珑项目",
 		Example: utils.BuildHelpMessage(CreateCommandHelp),
 		Long:    utils.BuildHelpMessage(CreateCommandDescription),
 		Run: func(cmd *cobra.Command, args []string) {

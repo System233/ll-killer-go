@@ -72,19 +72,20 @@ func main() {
 	app.InheritedFlags().SortFlags = false
 	app.LocalFlags().SortFlags = false
 	app.Flags().BoolVar(&utils.GlobalFlag.Debug, "debug", utils.GlobalFlag.Debug, "显示调试信息")
-	app.AddCommand(_apt.CreateAPTCommand(),
+	app.AddCommand(
+		_buildaux.CreateBuildAuxCommand(),
+		_create.CreateCreateCommand(),
+		_apt.CreateAPTCommand(),
 		_build.CreateBuildCommand(),
 		_exec.CreateExecCommand(),
-		_run.CreateRunCommand(),
-		_create.CreateCreateCommand(),
-		_commit.CreateCommitCommand(),
 		_layer.CreateLayerCommand(),
 		_clean.CreateCleanCommand(),
-		_export.CreateExportCommand(),
-		_buildaux.CreateBuildAuxCommand(),
 		_script.CreateScriptCommand(),
 		_overlay.CreateOverlayCommand(),
-		_nsenter.NsEnterNsEnterCommand())
+		_nsenter.NsEnterNsEnterCommand(),
+		_run.CreateRunCommand(),
+		_commit.CreateCommitCommand(),
+		_export.CreateExportCommand())
 	app.Version = fmt.Sprintf("%s/%s", config.Version, config.BuildTime)
 	if _ptrace.IsSupported {
 		app.AddCommand(_ptrace.CreatePtraceCommand())

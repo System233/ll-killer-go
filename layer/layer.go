@@ -12,37 +12,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/System233/ll-killer-go/types"
 	"github.com/System233/ll-killer-go/utils"
 
 	"golang.org/x/sys/unix"
 )
-
-const LayerMagic = "<<< deepin linglong layer archive >>>\x00\x00\x00"
-const MkfsErofs = "mkfs.erofs"
-const DumpErofs = "dump.erofs"
-const ErofsFuse = "erofsfuse"
-const FuserMount = "fusermount"
-
-type LayerInfo struct {
-	Arch          []string `json:"arch"`
-	Base          string   `json:"base"`
-	Runtime       string   `json:"runtime,omitempty"`
-	Channel       string   `json:"channel"`
-	Command       []string `json:"command"`
-	Description   string   `json:"description"`
-	ID            string   `json:"id"`
-	Kind          string   `json:"kind"`
-	Module        string   `json:"module"`
-	Name          string   `json:"name"`
-	SchemaVersion string   `json:"schema_version"`
-	Size          int64    `json:"size"`
-	Version       string   `json:"version"`
-}
-type LayerInfoHeader struct {
-	Info    LayerInfo `json:"info"`
-	Version string    `json:"version"`
-}
 
 func GetTriplet() string {
 	switch runtime.GOARCH {
@@ -74,7 +47,7 @@ func getArch() string {
 		return "unknown"
 	}
 }
-func (info *LayerInfo) ParseLayerInfo(config types.Config) error {
+func (info *LayerInfo) ParseLayerInfo(config Config) error {
 	channel := "main"
 	// 验证package版本格式
 	if len(strings.Split(config.Package.Version, ".")) != 4 {
@@ -181,7 +154,7 @@ func IsValidComponentVersion(version string) bool {
 	return true
 }
 
-func NewLayerInfoHeader(config types.Config) LayerInfoHeader {
+func NewLayerInfoHeader(config Config) LayerInfoHeader {
 	var header LayerInfoHeader
 	header.Version = "1"
 	header.Info.ParseLayerInfo(config)
@@ -372,13 +345,8 @@ func Pack(opt *PackOption) error {
 	execPath := MkfsErofs
 	var layer LayerHeader
 	layer.Info.Version = "1"
-	infoJson, err := os.Open(path.Join(opt.Source, "info.json"))
-	if err != nil {
-		return err
-	}
-	infoData, err := io.ReadAll(infoJson)
-	defer infoJson.Close()
-	err = json.Unmarshal(infoData, &layer.Info.Info)
+	infoJsonPath := path.Join(opt.Source, "info.json")
+	err := utils.LoadJsonFile(infoJsonPath, &layer.Info.Info)
 	if err != nil {
 		return err
 	}

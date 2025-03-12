@@ -14,9 +14,9 @@ import (
 )
 
 const BuildAuxCommandHelp = `
-ll-killer build-aux创建一系列辅助脚本，可用于构建和调试：
+ll-killer init 命令在当前目录创建一系列构建所需的文件以初始化项目：
 
-build-aux 目录下创建的工具：
+在 build-aux 目录下创建的工具：
   - entrypoint.sh        玲珑应用入口点
   - env.sh               运行环境变量配置
   - ldd-check.sh         检查容器内缺失库（处理未完整声明依赖的 deb）
@@ -39,9 +39,10 @@ func BuildAuxMain(cmd *cobra.Command, args []string) error {
 
 func CreateBuildAuxCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "build-aux",
-		Short: "创建辅助构建脚本",
-		Long:  BuildAuxCommandHelp,
+		Use:     "init",
+		Aliases: []string{"build-aux"},
+		Short:   "初始化项目目录",
+		Long:    BuildAuxCommandHelp,
 		Run: func(cmd *cobra.Command, args []string) {
 			utils.ExitWith(BuildAuxMain(cmd, args))
 		},

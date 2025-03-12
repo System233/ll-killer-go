@@ -20,7 +20,6 @@ import (
 
 	"github.com/System233/ll-killer-go/config"
 
-	"github.com/go-yaml/yaml"
 	"github.com/moby/sys/reexec"
 )
 
@@ -508,20 +507,6 @@ func SetupEnvVar() error {
 	}
 	return nil
 }
-func DumpYaml(file string, v interface{}) error {
-	fs, err := os.Create(file)
-	if err != nil {
-		return err
-	}
-	encoder := yaml.NewEncoder(fs)
-	defer encoder.Close()
-	err = encoder.Encode(v)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func CopyFileIO(src, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {

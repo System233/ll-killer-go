@@ -18,27 +18,26 @@ import (
 
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/layer"
-	"github.com/System233/ll-killer-go/types"
 	"github.com/System233/ll-killer-go/utils"
 
-	"github.com/go-yaml/yaml"
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )
 
 var Flag struct {
-	RootFs      string
-	Target      string
-	ExecPath    string
-	Compressor  string
-	BlockSize   int
-	Gid         int
-	Uid         int
-	NoPostSetup bool
-	NoLayer     bool
-	PackArgs    []string
-	Args        []string
+	RootFs         string
+	Target         string
+	ExecPath       string
+	Compressor     string
+	BlockSize      int
+	Gid            int
+	Uid            int
+	NoPostSetup    bool
+	PrintLayerName bool
+	NoLayer        bool
+	PackArgs       []string
+	Args           []string
 }
 
 const BuildCommandDescription = `无需ll-builder, 直接将当前项目构建为layer。
@@ -65,7 +64,7 @@ const BuildCommandDescription = `无需ll-builder, 直接将当前项目构建�
 const BuildCommandHelp = ``
 const PostSetupScript = "build-aux/post-setup.sh"
 
-var Config types.Config
+var Config layer.Config
 var LayerInfo layer.LayerInfo
 
 func PostPackUp(workDir string) {
@@ -136,11 +135,7 @@ func PostPackUp(workDir string) {
 }
 
 func SetupFilesystem(workDir string) {
-	data, err := os.ReadFile(config.LinglongYaml)
-	if err != nil {
-		utils.ExitWith(err)
-	}
-	err = yaml.Unmarshal(data, &Config)
+	err := utils.LoadYamlFile(config.LinglongYaml, &Config)
 	if err != nil {
 		utils.ExitWith(err)
 	}
@@ -276,6 +271,9 @@ func GetBuildArgs() []string {
 		fmt.Sprint("--no-layer=", Flag.NoLayer),
 		fmt.Sprint("--no-post-setup=", Flag.NoPostSetup),
 	}
+	if Flag.Target != "" {
+		args = append(args, "--output", Flag.Target)
+	}
 	if Flag.Compressor != "" {
 		args = append(args, "--compressor", Flag.Compressor)
 	}
@@ -295,13 +293,27 @@ func GetBuildArgs() []string {
 	}
 	return args
 }
+func PrintLayerName() error {
+	var cfg layer.Config
+	var info layer.LayerInfo
+	if Flag.Target != "" {
+		fmt.Println(Flag.Target)
+		return nil
+	}
+	utils.Must(utils.LoadYamlFile(config.LinglongYaml, &cfg), "读取linglong.yaml失败")
+	utils.Must(info.ParseLayerInfo(cfg), "linglong.yaml配置不合法")
+	fmt.Println(info.FileName())
+	return nil
+}
 func BuildMain(cmd *cobra.Command, args []string) error {
 	Flag.Args = args
 	reexec.Register("BuildLayer", BuildLayer)
 	if reexec.Init() {
 		return nil
 	}
-
+	if Flag.PrintLayerName {
+		return PrintLayerName()
+	}
 	return utils.SwitchTo("BuildLayer", &utils.SwitchFlags{
 		UID:           0,
 		GID:           0,
@@ -329,6 +341,8 @@ func CreateBuildCommand() *cobra.Command {
 	cmd.Flags().IntVarP(&Flag.Gid, "force-gid", "G", os.Getegid(), "文件Gid,-1为不更改")
 	cmd.Flags().BoolVar(&Flag.NoPostSetup, "no-post-setup", false, "不对构建结果进行后处理")
 	cmd.Flags().BoolVar(&Flag.NoLayer, "no-layer", false, "不输出layer文件")
+	cmd.Flags().BoolVar(&Flag.PrintLayerName, "print-layer-name", false, "输出构建的layer文件名")
+	cmd.Flags().StringVarP(&Flag.Target, "output", "o", "", "输出的layer文件名")
 	cmd.Flags().StringSliceVar(&Flag.PackArgs, "erofs-args", []string{}, "其他mkfs.erofs选项,逗号分隔")
 	cmd.Flags().SortFlags = false
 	return cmd

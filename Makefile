@@ -17,7 +17,7 @@ FUSE_PROJECT := $(foreach file, $(FUSE_PROJECT_DEPS), $(FUSE_DIR)/$(file))
 FUSE_SRCS := $(foreach file, $(FUSE_PROJECT_SRC), $(FUSE_DIR)/$(file))
 
 RES_DIRS := build-aux/build-aux build-aux/apt.conf.d
-SRC_DIRS := build-aux config apps layer pty utils types
+SRC_DIRS := build-aux config apps layer pty utils
 GO_SOURCES:= $(wildcard *.go) $(shell find $(SRC_DIRS) -name '*.go')
 GO_RESOURCES:= $(foreach dir, $(RES_DIRS), $(dir)/*)
 GO_TEST_SOURCES:= $(wildcard *_test.go) $(shell find $(SRC_DIRS) -name '*_test.go')
