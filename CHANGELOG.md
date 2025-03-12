@@ -1,4 +1,33 @@
 
+<a name="v1.4.5"></a>
+## [v1.4.5](https://github.com/System233/ll-killer-go/compare/v1.4.4...v1.4.5) (2025-03-12)
+
+### 代码重构
+
+* 调整layer子命令帮助文案
+* 分离build-aux资源文件
+
+### 兼容性更改
+
+* 将包名从本地迁移到GitHub
+
+### 构建系统
+
+* CI自动测试
+
+### 错误修复
+
+* 修复内置版本号显示 build: 添加单元测试
+
+
+<a name="v1.4.4"></a>
+## [v1.4.4](https://github.com/System233/ll-killer-go/compare/v1.4.3...v1.4.4) (2025-03-12)
+
+### 错误修复
+
+* 防止覆盖resolv.conf/localtime/timezone/machine-id
+
+
 <a name="v1.4.3"></a>
 ## [v1.4.3](https://github.com/System233/ll-killer-go/compare/v1.4.2...v1.4.3) (2025-03-11)
 
