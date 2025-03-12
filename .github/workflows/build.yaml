@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      release: ${{ contains(github.ref,'refs/tags/') && startsWith(github.ref_name,'v') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -19,12 +21,6 @@ jobs:
         with:
           go-version-file: "go.mod"
           cache: true
-      - name: Install git-chglog
-        run: |
-          go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
-      - name: Generate Changelog
-        run: |
-          git-chglog -o RELEASE.md ${{github.ref_name}}
       - uses: docker/setup-buildx-action@v2
       - name: Apk Cache
         uses: actions/cache@v3
@@ -67,8 +63,13 @@ jobs:
       - name: Verify
         run: |
           file ll-killer-*
+      - name: Generate Changelog
+        if: ${{ env.release == 'true' }}
+        run: |
+          go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
+          git-chglog -o RELEASE.md ${{github.ref_name}}
       - name: Release
-        if: ${{ contains(github.ref,'refs/tags/') && startsWith(github.ref_name,'v') }}
+        if: ${{ env.release == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ contains(github.ref_name,'dev') }}
