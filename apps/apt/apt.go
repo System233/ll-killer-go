@@ -8,6 +8,7 @@ package _apt
 
 import (
 	"os"
+	"path"
 	"syscall"
 
 	"github.com/System233/ll-killer-go/config"
@@ -46,14 +47,20 @@ func MountAPT() {
 		utils.ExitWith(err)
 	}
 	err = utils.MkdirAlls([]string{
-		config.AptDataDir, 
-		config.AptCacheDir, 
+		config.AptDataDir,
+		config.AptCacheDir,
 		config.AptConfDir,
 		config.AptDpkgDir,
-		}, 0755)
+	}, 0755)
 	if err != nil {
 		utils.ExitWith(err)
 	}
+	statusPath := path.Join(config.AptDpkgDir, "status")
+	file, err := os.OpenFile(statusPath, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		utils.ExitWith(err)
+	}
+	file.Close()
 	err = utils.MountAll([]utils.MountOption{
 		{
 			Source: "sources.list.d",

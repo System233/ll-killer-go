@@ -170,6 +170,7 @@ func ReadMapping(mapPath string) ([]syscall.SysProcIDMap, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer fp.Close()
 	result := []syscall.SysProcIDMap{}
 	for {
 		var innerId, outerId, count int
