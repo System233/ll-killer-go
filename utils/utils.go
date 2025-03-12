@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"ll-killer/config"
 	"log"
 	"os"
 	"os/exec"
@@ -18,6 +17,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/System233/ll-killer-go/config"
 
 	"github.com/go-yaml/yaml"
 	"github.com/moby/sys/reexec"

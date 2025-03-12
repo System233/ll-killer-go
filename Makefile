@@ -1,12 +1,13 @@
 GO  ?= go
 GOARCH ?= $(shell $(GO) env GOARCH)
+MODULE := $(shell $(GO) list -m)
 TARGET ?= $(shell echo $$(uname -m)-$$(uname -s | tr '[:upper:]' '[:lower:]')-gnu)
 LDFLAGS_STATIC := -extldflags -static
 TRIMPATH := -trimpath
 
 VERSION := $(shell git describe --tags --always)
 BUILDTIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS := -X "ll-killer/config.Version=$(VERSION)" -X "ll-killer/config.BuildTime=$(BUILDTIME)"
+LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
 
 FUSE_LIBS := libfuse-overlayfs.a libgnu.a
 FUSE_DIR := fuse-overlayfs

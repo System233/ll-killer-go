@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"ll-killer/types"
-	"ll-killer/utils"
 	"os"
 	"path"
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/System233/ll-killer-go/types"
+	"github.com/System233/ll-killer-go/utils"
 
 	"golang.org/x/sys/unix"
 )

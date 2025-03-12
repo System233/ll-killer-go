@@ -7,8 +7,8 @@
 package _buildaux
 
 import (
-	buildaux "ll-killer/build-aux"
-	"ll-killer/utils"
+	buildaux "github.com/System233/ll-killer-go/build-aux"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )

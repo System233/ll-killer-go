@@ -10,11 +10,12 @@ import (
 	"embed"
 	"errors"
 	"io/fs"
-	"ll-killer/config"
-	"ll-killer/utils"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 )

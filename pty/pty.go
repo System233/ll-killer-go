@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"ll-killer/utils"
 	"net"
 	"net/rpc"
 	"os"
@@ -15,6 +14,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/containerd/console"
 	"github.com/moby/sys/reexec"

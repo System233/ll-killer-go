@@ -7,7 +7,7 @@
 package config
 
 const (
-	KillerExec        = "ll-killer"
+	KillerExec        = "github.com/System233/ll-killer-go"
 	KillerExecEnv     = "KILLER_EXEC"
 	KillerPackerEnv   = "KILLER_PACKER"
 	FileSystemDir     = "linglong/filesystem"

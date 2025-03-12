@@ -13,8 +13,8 @@ import (
 	"runtime"
 	"syscall"
 
-	internal "ll-killer/apps/ptrace/internal"
-	"ll-killer/utils"
+	internal "github.com/System233/ll-killer-go/apps/ptrace/internal"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"

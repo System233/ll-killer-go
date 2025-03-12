@@ -1,4 +1,4 @@
-module ll-killer
+module github.com/System233/ll-killer-go
 
 go 1.23.0
 

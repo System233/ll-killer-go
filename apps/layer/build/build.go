@@ -9,16 +9,17 @@ package _build
 import (
 	"encoding/json"
 	"fmt"
-	"ll-killer/config"
-	"ll-killer/layer"
-	"ll-killer/types"
-	"ll-killer/utils"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/layer"
+	"github.com/System233/ll-killer-go/types"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/go-yaml/yaml"
 	"github.com/moby/sys/reexec"

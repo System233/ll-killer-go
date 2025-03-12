@@ -7,11 +7,11 @@
 package _layer
 
 import (
-	_build "ll-killer/apps/layer/build"
-	_dump "ll-killer/apps/layer/dump"
-	_mount "ll-killer/apps/layer/mount"
-	_pack "ll-killer/apps/layer/pack"
-	_umount "ll-killer/apps/layer/umount"
+	_build "github.com/System233/ll-killer-go/apps/layer/build"
+	_dump "github.com/System233/ll-killer-go/apps/layer/dump"
+	_mount "github.com/System233/ll-killer-go/apps/layer/mount"
+	_pack "github.com/System233/ll-killer-go/apps/layer/pack"
+	_umount "github.com/System233/ll-killer-go/apps/layer/umount"
 
 	"github.com/spf13/cobra"
 )

@@ -9,12 +9,13 @@ package _nsenter
 import (
 	"fmt"
 	"io"
-	"ll-killer/utils"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"

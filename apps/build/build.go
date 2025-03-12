@@ -9,13 +9,14 @@ package _build
 import (
 	"encoding/base64"
 	"fmt"
-	_ptrace "ll-killer/apps/ptrace"
-	"ll-killer/config"
-	"ll-killer/utils"
 	"os"
 	"path"
 	"strings"
 	"syscall"
+
+	_ptrace "github.com/System233/ll-killer-go/apps/ptrace"
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
@@ -306,7 +307,7 @@ func CreateBuildCommand() *cobra.Command {
 		cmd.Flags().BoolVar(&BuildFlag.Ptrace, "ptrace", false, "修正系统调用(chown)")
 	}
 	cmd.Flags().StringVar(&BuildFlag.EncodedArgs, "encoded-args", "", "编码后的参数")
-	cmd.Flags().StringVar(&BuildFlag.Self, "self", execPath, "ll-killer路径")
+	cmd.Flags().StringVar(&BuildFlag.Self, "self", execPath, "github.com/System233/ll-killer-go路径")
 	cmd.Flags().BoolVarP(&BuildFlag.Strict, "strict", "x", os.Getenv("LINGLONG_APPID") == "", "严格模式，启动一个与运行时环境相同的构建环境，确保环境一致性（不含gcc等工具）")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFS, "fuse-overlayfs", "", "外部fuse-overlayfs命令路径(可选)")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFSArgs, "fuse-overlayfs-args", "", "fuse-overlayfs命令额外参数")

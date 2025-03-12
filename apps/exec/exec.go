@@ -8,14 +8,15 @@ package _exec
 
 import (
 	"fmt"
-	"ll-killer/config"
-	"ll-killer/pty"
-	"ll-killer/utils"
 	"log"
 	"os"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/pty"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"

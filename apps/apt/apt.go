@@ -7,10 +7,11 @@
 package _apt
 
 import (
-	"ll-killer/config"
-	"ll-killer/utils"
 	"os"
 	"syscall"
+
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"

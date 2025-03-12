@@ -7,7 +7,7 @@
 package _commit
 
 import (
-	"ll-killer/utils"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )

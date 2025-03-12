@@ -10,16 +10,17 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	buildaux "ll-killer/build-aux"
-	"ll-killer/config"
-	"ll-killer/layer"
-	"ll-killer/types"
-	"ll-killer/utils"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
+
+	buildaux "github.com/System233/ll-killer-go/build-aux"
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/layer"
+	"github.com/System233/ll-killer-go/types"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )

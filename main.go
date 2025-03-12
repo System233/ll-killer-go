@@ -8,24 +8,25 @@ package main
 
 import (
 	"fmt"
-	_apt "ll-killer/apps/apt"
-	_build "ll-killer/apps/build"
-	_buildaux "ll-killer/apps/build-aux"
-	_clean "ll-killer/apps/clean"
-	_commit "ll-killer/apps/commit"
-	_create "ll-killer/apps/create"
-	_exec "ll-killer/apps/exec"
-	_export "ll-killer/apps/export"
-	_layer "ll-killer/apps/layer"
-	_nsenter "ll-killer/apps/nsenter"
-	_overlay "ll-killer/apps/overlay"
-	_ptrace "ll-killer/apps/ptrace"
-	_run "ll-killer/apps/run"
-	_script "ll-killer/apps/script"
-	"ll-killer/config"
-	"ll-killer/utils"
 	"log"
 	"os"
+
+	_apt "github.com/System233/ll-killer-go/apps/apt"
+	_build "github.com/System233/ll-killer-go/apps/build"
+	_buildaux "github.com/System233/ll-killer-go/apps/build-aux"
+	_clean "github.com/System233/ll-killer-go/apps/clean"
+	_commit "github.com/System233/ll-killer-go/apps/commit"
+	_create "github.com/System233/ll-killer-go/apps/create"
+	_exec "github.com/System233/ll-killer-go/apps/exec"
+	_export "github.com/System233/ll-killer-go/apps/export"
+	_layer "github.com/System233/ll-killer-go/apps/layer"
+	_nsenter "github.com/System233/ll-killer-go/apps/nsenter"
+	_overlay "github.com/System233/ll-killer-go/apps/overlay"
+	_ptrace "github.com/System233/ll-killer-go/apps/ptrace"
+	_run "github.com/System233/ll-killer-go/apps/run"
+	_script "github.com/System233/ll-killer-go/apps/script"
+	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -41,7 +42,7 @@ const MainCommandHelp = `ll-killer 是一个工具，旨在解决玲珑容器应
   commit  提交构建内容至玲珑容器。
   run     运行已构建的应用进行测试。
 
-运行 "ll-killer <command> --help" 以查看子命令的详细信息。
+运行 "github.com/System233/ll-killer-go <command> --help" 以查看子命令的详细信息。
 
 更多信息请查看项目主页: https://github.com/System233/ll-killer-go.git
 `
@@ -63,7 +64,7 @@ func main() {
 	}
 
 	app := cobra.Command{
-		Use:     "ll-killer",
+		Use:     "github.com/System233/ll-killer-go",
 		Short:   Usage,
 		Example: utils.BuildHelpMessage(MainCommandHelp),
 	}

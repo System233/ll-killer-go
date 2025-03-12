@@ -7,9 +7,10 @@
 package _pack
 
 import (
-	"ll-killer/layer"
-	"ll-killer/utils"
 	"os"
+
+	"github.com/System233/ll-killer-go/layer"
+	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/spf13/cobra"
 )
