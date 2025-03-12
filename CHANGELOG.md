@@ -1,4 +1,12 @@
 
+<a name="v1.4.8"></a>
+## [v1.4.8](https://github.com/System233/ll-killer-go/compare/v1.4.7...v1.4.8) (2025-03-13)
+
+### 错误修复
+
+* 修复某些叠加目录的权限不正确
+
+
 <a name="v1.4.7"></a>
 ## [v1.4.7](https://github.com/System233/ll-killer-go/compare/v1.4.6...v1.4.7) (2025-03-13)
 
