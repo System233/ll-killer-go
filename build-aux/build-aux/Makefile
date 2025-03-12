@@ -106,9 +106,9 @@ ldd_search: $(LDD_CHECK_TARGET) $(BUILD_AUX_DEPS)
 	@mv -f $(LDD_FOUND_TARGET)~ $(LDD_FOUND_TARGET)
 	@mv -f $(LDD_NOTFOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)
 
-$(LDD_INSTALL_TARGET): $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET)
+$(LDD_INSTALL_TARGET): $(LDD_FOUND_TARGET)
 	@echo "[安装找到的缺失库]"
-	$(KILLER) build -- apt install -y $(shell cat $(LDD_CHECK_TARGET)) $(APPEND_LOG)
+	$(KILLER) build -- apt install -y $(shell cat $(LDD_FOUND_TARGET)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(LAYER_NAME): $(LAYER_DEP) $(BUILD_AUX_DEPS)
