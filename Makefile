@@ -30,10 +30,10 @@ ll-killer: $(GO_SOURCES) $(GO_RESOURCES) $(FUSE_LIBS)
 	$(GO_BUILD) -o $@ .
 
 $(FUSE_DIR)/Makefile: $(FUSE_PROJECT)
+	git -C $(FUSE_DIR) apply --check ../patches/fuse-overlayfs.patch -R -q || git -C $(FUSE_DIR) apply ../patches/fuse-overlayfs.patch
 	cd $(FUSE_DIR);\
-	git apply --check ../patches/fuse-overlayfs.patch -q && git apply ../patches/fuse-overlayfs.patch;\
-	./autogen.sh;\
-	LIBS="-ldl" LDFLAGS="-static" ./configure --host=$(TARGET);
+	git apply --check ../patches/fuse-overlayfs.patch -R -q || git apply ../patches/fuse-overlayfs.patch; \
+	./autogen.sh && LIBS="-ldl" LDFLAGS="-static" ./configure --host=$(TARGET);
 
 $(FUSE_LIBS): $(FUSE_SRCS)
 	make -C $(FUSE_DIR)
