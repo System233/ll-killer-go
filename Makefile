@@ -8,7 +8,12 @@ TRIMPATH := -trimpath
 
 VERSION := $(shell git describe --tags --always)
 BUILDTIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
+ifeq ($(ENABLE_NO_EVM),yes)
+	EXTRA_TAG := -nevm
+else
+	EXTRA_TAG := 
+endif
+LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)$(EXTRA_TAG)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
 
 FUSE_LIBS := libfuse-overlayfs.a libgnu.a
 FUSE_DIR := fuse-overlayfs
