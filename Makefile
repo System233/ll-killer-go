@@ -2,6 +2,7 @@ GO  ?= go
 GOARCH ?= $(shell $(GO) env GOARCH)
 MODULE := $(shell $(GO) list -m)
 TARGET ?= $(shell echo $$(uname -m)-$$(uname -s | tr '[:upper:]' '[:lower:]')-gnu)
+ENABLE_NO_EVM ?= no
 LDFLAGS_STATIC := -extldflags -static
 TRIMPATH := -trimpath
 
@@ -30,6 +31,11 @@ ll-killer: $(GO_SOURCES) $(GO_RESOURCES) $(FUSE_LIBS)
 	$(GO_BUILD) -o $@ .
 
 $(FUSE_DIR)/Makefile: $(FUSE_PROJECT)
+	if test "$(ENABLE_NO_EVM)" = "yes" ;then \
+		git -C $(FUSE_DIR)  apply --check ../patches/fuse-overlayfs-nevm.patch -R -q || git -C $(FUSE_DIR) apply ../patches/fuse-overlayfs-nevm.patch; \
+	else \
+		git -C $(FUSE_DIR)  apply --check ../patches/fuse-overlayfs-nevm.patch -q || git -C $(FUSE_DIR) apply ../patches/fuse-overlayfs-nevm.patch -R; \
+	fi
 	git -C $(FUSE_DIR) apply --check ../patches/fuse-overlayfs.patch -R -q || git -C $(FUSE_DIR)  apply ../patches/fuse-overlayfs.patch; 
 	cd $(FUSE_DIR) && ./autogen.sh && LIBS="-ldl" LDFLAGS="-static" ./configure --host=$(TARGET);
 

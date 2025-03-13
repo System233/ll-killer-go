@@ -1,0 +1,13 @@
+diff --git a/main.c b/main.c
+index b5753db..5f2b9ce 100644
+--- a/main.c
++++ b/main.c
+@@ -2833,7 +2833,7 @@ copy_xattr (const struct ovl_layer *sl, int sfd,
+ 
+           if (fsetxattr (dfd, encoded_name, v, s, 0) < 0)
+             {
+-              if (errno == EINVAL || errno == EOPNOTSUPP)
++              if (errno == EINVAL || errno == EOPNOTSUPP || errno == EPERM)
+                 continue;
+               return -1;
+             }
