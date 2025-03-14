@@ -493,18 +493,23 @@ func CopySymlink(destPath string, src string, force bool) error {
 func BuildHelpMessage(help string) string {
 	return strings.ReplaceAll(help, "<program>", os.Args[0])
 }
-func SetupEnvVar() error {
-	if os.Getenv(config.KillerExecEnv) == "" {
-		path, err := exec.LookPath(config.KillerExec)
+func GetKillerExec() (string, error) {
+	path, err := os.Executable()
+	if err != nil {
+		path, err = filepath.EvalSymlinks("/proc/self/exe")
 		if err != nil {
-			path, err = filepath.Abs(os.Args[0])
-			if err != nil {
-				return err
-			}
-			os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Dir(path)))
+			return "", err
 		}
-		os.Setenv(config.KillerExecEnv, path)
+		os.Setenv("PATH", fmt.Sprintf("%s:%s", os.Getenv("PATH"), filepath.Dir(path)))
 	}
+	return path, nil
+}
+func SetupEnvVar() error {
+	path, err := GetKillerExec()
+	if err != nil {
+		return err
+	}
+	os.Setenv(config.KillerExecEnv, path)
 	return nil
 }
 func CopyFileIO(src, dst string) error {

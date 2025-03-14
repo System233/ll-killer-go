@@ -282,7 +282,7 @@ func CreateBuildCommand() *cobra.Command {
 	if err != nil {
 		utils.ExitWith(err)
 	}
-	execPath, err := os.Executable()
+	execPath, err := utils.GetKillerExec()
 	if err != nil {
 		utils.ExitWith(err)
 	}

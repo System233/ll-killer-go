@@ -97,8 +97,8 @@ func ExtractBuildAuxFiles(force bool) error {
 	if err := ExtractEmbedFilesToDisk(".", force); err != nil {
 		return err
 	}
-	if err := ExtractKillerExec(config.KillerExec, force); err != nil {
-		return err
-	}
+	// if err := ExtractKillerExec(config.KillerExec, force); err != nil {
+	// 	return err
+	// }
 	return nil
 }

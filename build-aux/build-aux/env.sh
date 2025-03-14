@@ -1,7 +1,8 @@
 #!/bin/bash
 if [ -z "$ENV_SETUPED" ];then
+    CWD=$(dirname $(readlink -f "$0"))
     export ENV_SETUPED=1
-    export PATH=$PATH:$(dirname $0):$PWD
+    export PATH=$PATH:$CWD
     export ENTRYPOINT_NAME=${ENTRYPOINT_NAME:-entrypoint.sh}
     export ENTRYPOINT=${ENTRYPOINT:-/opt/apps/$LINGLONG_APPID/files/$ENTRYPOINT_NAME}
     export KILLER_EXEC=${KILLER_EXEC:-$(which ll-killer)}
