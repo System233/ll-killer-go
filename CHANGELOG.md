@@ -1,4 +1,26 @@
 
+<a name="v1.4.11"></a>
+## [v1.4.11](https://github.com/System233/ll-killer-go/compare/v1.4.10...v1.4.11) (2025-03-15)
+
+### 代码调整
+
+* 为init/create子命令添加短标志
+* 版本信息中增加架构信息
+
+### 兼容性更改
+
+* 默认启用NEVM补丁
+
+### 新增功能
+
+* 新增自动化测试功能, 使用make test即可体验
+
+### 错误修复
+
+* 修复非严格模式下的build环境启动
+* 切换到fuse-overlayfs主分支以消除lazytime提示
+
+
 <a name="v1.4.10"></a>
 ## [v1.4.10](https://github.com/System233/ll-killer-go/compare/v1.4.9...v1.4.10) (2025-03-14)
 
