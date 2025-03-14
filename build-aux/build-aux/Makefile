@@ -119,13 +119,19 @@ clean-apt:
 	rm -rf linglong/apt
 clean-fs:
 	rm -rf linglong/filesystem
+clean-test:
+	rm -rf tests
 clean-ll:
 	rm -rf linglong/output
-	ll-builder list|grep "$(PKG)"|xargs ll-builder remove
-clean: clean-ll clean-fs
-	rm -rf *.log *.layer tests
+	ll-builder list|grep ":$(APPID)/"|xargs -r ll-builder remove || true
+clean-log:
+	rm -rf *.log 
+clean-layer:
+	rm -rf *.log *.layer
+clean: clean-ll clean-fs clean-test clean-log clean-layer
 clean-mk:
 	rm -rf $(CONFIG_TARGET)
+clean-all: clean clean-apt
 
 test-dynamic: $(LAYER_NAME)
 	@echo "[正在启动测试]"
@@ -150,7 +156,11 @@ help:
 	@echo "    clean-apt     清除APT相关缓存文件"
 	@echo "    clean-fs      清除构建文件系统内容"
 	@echo "    clean-ll      清除玲珑构建输出"
+	@echo "    clean-layer   清除layer文件"
+	@echo "    clean-log     清除log文件"
+	@echo "    clean-test    清除tests文件"
 	@echo "    clean-mk      清除$(CONFIG_TARGET)配置文件"
+	@echo "    clean-all     执行clean并清除clean-apt"
 	@echo "    test          执行自动化测试"
 	@echo "    help          显示本帮助信息"
 	@echo ""
@@ -202,5 +212,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-apt clean-ll clean-fs help test test-dynamic
+.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
