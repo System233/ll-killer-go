@@ -2,7 +2,7 @@ GO  ?= go
 GOARCH ?= $(shell $(GO) env GOARCH)
 MODULE := $(shell $(GO) list -m)
 TARGET ?= $(shell echo $$(uname -m)-$$(uname -s | tr '[:upper:]' '[:lower:]')-gnu)
-ENABLE_NO_EVM ?= no
+ENABLE_NO_EVM ?= yes
 LDFLAGS_STATIC := -extldflags -static
 TRIMPATH := -trimpath
 
