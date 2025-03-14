@@ -29,7 +29,8 @@ function step_check(){
 function take_shot(){
     name=$(printf "${KILLER_TEST_SCREENSHOT}" $SECONDS)
     log $(printf "正在截图 %d秒: %s" $SECONDS "$name")
-    scrot -zof "${name}"
+    rm -f "${name}"
+    scrot -z "${name}"
 }
 
 
@@ -63,6 +64,7 @@ for((i=0;i<${KILLER_TEST_QUIT_TIMEOUT};++i));do
     step_sleep
     if ! kill $APP_PID 2>/dev/null;then
         KILL_OK=1
+        log "进程已退出"
         break
     fi
 done
