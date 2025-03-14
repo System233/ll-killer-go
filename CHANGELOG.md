@@ -1,4 +1,12 @@
 
+<a name="v1.4.12"></a>
+## [v1.4.12](https://github.com/System233/ll-killer-go/compare/v1.4.11...v1.4.12) (2025-03-15)
+
+### 错误修复
+
+* 修正安装缺失库时传递的build选项
+
+
 <a name="v1.4.11"></a>
 ## [v1.4.11](https://github.com/System233/ll-killer-go/compare/v1.4.10...v1.4.11) (2025-03-15)
 
