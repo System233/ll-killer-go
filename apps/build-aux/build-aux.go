@@ -47,6 +47,6 @@ func CreateBuildAuxCommand() *cobra.Command {
 			utils.ExitWith(BuildAuxMain(cmd, args))
 		},
 	}
-	cmd.Flags().BoolVar(&BuildAuxFlag.Force, "force", false, "强制覆盖已存在文件")
+	cmd.Flags().BoolVarP(&BuildAuxFlag.Force, "force", "f", false, "强制覆盖已存在文件")
 	return cmd
 }

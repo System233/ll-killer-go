@@ -219,18 +219,18 @@ func CreateCreateCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&ConfigData.Version, "spec", "1", "玲珑yaml版本")
-	cmd.Flags().StringVar(&ConfigData.Package.ID, "id", "app", "包名")
-	cmd.Flags().StringVar(&ConfigData.Package.Name, "name", "app", "显示名称")
-	cmd.Flags().StringVar(&ConfigData.Package.Version, "version", "0.0.0.1", "版本号")
-	cmd.Flags().StringVar(&ConfigData.Package.Kind, "kind", "app", "应用类型：app|runtime")
-	cmd.Flags().StringVar(&ConfigData.Package.Description, "description", "", "应用说明")
-	cmd.Flags().StringArrayVar(&ConfigData.Command, "command", []string{"/opt/apps/<APPID>/files/entrypoint.sh"}, "启动命令")
-	cmd.Flags().StringVar(&ConfigData.Base, "base", "org.deepin.base/23.1.0", "Base镜像")
-	cmd.Flags().StringVar(&ConfigData.Runtime, "runtime", "", "Runtime镜像")
-	cmd.Flags().StringVar(&ConfigData.Build, "build", "build-aux/setup.sh", "构建命令")
+	cmd.Flags().StringVarP(&ConfigData.Package.ID, "id", "i", "app", "包名")
+	cmd.Flags().StringVarP(&ConfigData.Package.Name, "name", "n", "app", "显示名称")
+	cmd.Flags().StringVarP(&ConfigData.Package.Version, "version", "v", "0.0.0.1", "版本号")
+	cmd.Flags().StringVarP(&ConfigData.Package.Kind, "kind", "k", "app", "应用类型：app|runtime")
+	cmd.Flags().StringVarP(&ConfigData.Package.Description, "description", "d", "", "应用说明")
+	cmd.Flags().StringArrayVarP(&ConfigData.Command, "command", "c", []string{"/opt/apps/<APPID>/files/entrypoint.sh"}, "启动命令")
+	cmd.Flags().StringVarP(&ConfigData.Base, "base", "b", "org.deepin.base/23.1.0", "Base镜像")
+	cmd.Flags().StringVarP(&ConfigData.Runtime, "runtime", "r", "", "Runtime镜像")
+	cmd.Flags().StringVarP(&ConfigData.Build, "build", "B", "build-aux/setup.sh", "构建命令")
 	cmd.Flags().BoolVar(&CreateFlag.NoBuild, "no-build", false, "不自动初始化项目")
-	cmd.Flags().BoolVar(&CreateFlag.Force, "force", false, "强制覆盖已存在文件")
-	cmd.Flags().StringVar(&CreateFlag.Metadata, "from", "", "从APT Package元数据创建(支持apt show)")
-
+	cmd.Flags().BoolVarP(&CreateFlag.Force, "force", "f", false, "强制覆盖已存在文件")
+	cmd.Flags().StringVarP(&CreateFlag.Metadata, "from", "F", "", "从APT Package元数据创建(支持apt show)")
+	cmd.Flags().SortFlags = false
 	return cmd
 }
