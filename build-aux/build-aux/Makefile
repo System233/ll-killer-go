@@ -92,7 +92,7 @@ $(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS)
 	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(PKG) $(shell cat $(EXTRA_DEPS)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-$(LDD_CHECK_TARGET): $(INSTALL_TARGET) $(BUILD_AUX_DEPS)
+$(LDD_CHECK_TARGET): $(INSTALL_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
 	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh > $(LDD_CHECK_TARGET)~
 	$(MOVE_LOG)
@@ -100,7 +100,7 @@ $(LDD_CHECK_TARGET): $(INSTALL_TARGET) $(BUILD_AUX_DEPS)
 .INTERMEDIATE: ldd_search
 $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET): ldd_search
 
-ldd_search: $(LDD_CHECK_TARGET) $(BUILD_AUX_DEPS)
+ldd_search: $(LDD_CHECK_TARGET) build-aux/ldd-search.sh
 	@echo "[搜索缺失库所在包]"
 	$(KILLER) apt -- build-aux/ldd-search.sh $(LDD_CHECK_TARGET) $(LDD_FOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)~
 	@mv -f $(LDD_FOUND_TARGET)~ $(LDD_FOUND_TARGET)
@@ -136,7 +136,7 @@ clean-all: clean clean-apt
 test-dynamic: $(LAYER_NAME)
 	@echo "[正在启动测试]"
 	build-aux/test.sh $(APPID) $(LAYER_NAME) 2>&1 | tee test.log
-test: layer
+test: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory test-dynamic
 
 help:
