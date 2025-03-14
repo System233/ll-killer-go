@@ -13,12 +13,12 @@ ifeq ($(ENABLE_NO_EVM),yes)
 else
 	EXTRA_TAG := 
 endif
-LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)$(EXTRA_TAG)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
+LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)-$(GOARCH)$(EXTRA_TAG)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
 
 FUSE_LIBS := libfuse-overlayfs.a libgnu.a
 FUSE_DIR := fuse-overlayfs
 FUSE_PROJECT_DEPS := configure.ac Makefile.am
-FUSE_PROJECT_SRC=Makefile *.c *h
+FUSE_PROJECT_SRC= *.c *h
 FUSE_PROJECT := $(foreach file, $(FUSE_PROJECT_DEPS), $(FUSE_DIR)/$(file))
 FUSE_SRCS := $(foreach file, $(FUSE_PROJECT_SRC), $(FUSE_DIR)/$(file))
 
@@ -44,7 +44,7 @@ $(FUSE_DIR)/Makefile: $(FUSE_PROJECT)
 	git -C $(FUSE_DIR) apply --check ../patches/fuse-overlayfs.patch -R -q || git -C $(FUSE_DIR)  apply ../patches/fuse-overlayfs.patch; 
 	cd $(FUSE_DIR) && ./autogen.sh && LIBS="-ldl" LDFLAGS="-static" ./configure --host=$(TARGET);
 
-$(FUSE_LIBS): $(FUSE_SRCS)
+$(FUSE_LIBS): $(FUSE_DIR)/Makefile $(FUSE_SRCS)
 	make -C $(FUSE_DIR)
 	cp $(FUSE_DIR)/lib/libgnu.a \
 	   $(FUSE_DIR)/libfuse-overlayfs.a .
