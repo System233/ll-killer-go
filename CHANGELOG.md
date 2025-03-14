@@ -1,4 +1,12 @@
 
+<a name="v1.4.13"></a>
+## [v1.4.13](https://github.com/System233/ll-killer-go/compare/v1.4.12...v1.4.13) (2025-03-15)
+
+### 错误修复
+
+* 允许测试搜索系统默认图标
+
+
 <a name="v1.4.12"></a>
 ## [v1.4.12](https://github.com/System233/ll-killer-go/compare/v1.4.11...v1.4.12) (2025-03-15)
 
