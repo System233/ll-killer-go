@@ -35,6 +35,7 @@ echo "[正在测试快捷方式]"
 ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh" "$TMPLOG"
 i=0
 
+# TODO: 检测并排除KDE Plasma Panels
 echo "[正在测试启动命令]"
 while read args; do
     ARGS=($args)
