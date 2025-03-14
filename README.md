@@ -733,6 +733,9 @@ ll-killer ptrace -- bash
 **build环境内某些目录写入出现`Permission denied`**  
  是因为系统仓库内置的`fuse-overlayfs`有bug所致，需要重新编译最新版本，参考[获取静态fuse-overlayfs](#获取静态fuse-overlayfs)章节。
 
+**build环境内某些文件写入出现`Operation not permitted`，但可读取**  
+ 因为内核没有启用EVM，需要启用内核EVM，或使用`make ENABLE_NO_EVM=yes`重新编译`ll-killer-go`。
+
 **使用root模式构建后，ll-killer commit/ll-builder build出现错误**  
 删除linglong文件夹，或`chown -R $(id -u):$(id -g) linglong`将文件所有者改为自己。
 

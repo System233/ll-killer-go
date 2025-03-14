@@ -1,4 +1,14 @@
 
+<a name="v1.4.10"></a>
+## [v1.4.10](https://github.com/System233/ll-killer-go/compare/v1.4.9...v1.4.10) (2025-03-14)
+
+### 构建系统
+
+* 编译nevm版本时在版本号中添加nevm标记
+* 添加EVM补丁，使用ENABLE_NO_EVM=yes启用 当fuse读写有问题时可用此补丁
+* 确保补丁已应用
+
+
 <a name="v1.4.9"></a>
 ## [v1.4.9](https://github.com/System233/ll-killer-go/compare/v1.4.8...v1.4.9) (2025-03-13)
 
