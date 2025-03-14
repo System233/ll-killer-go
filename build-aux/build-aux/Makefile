@@ -123,7 +123,15 @@ clean-ll:
 	rm -rf linglong/output
 	ll-builder list|grep "$(PKG)"|xargs ll-builder remove
 clean: clean-ll clean-fs
-	rm -rf *.log *.layer
+	rm -rf *.log *.layer tests
+clean-mk:
+	rm -rf $(CONFIG_TARGET)
+
+test-dynamic: $(LAYER_NAME)
+	@echo "[正在启动测试]"
+	build-aux/test.sh $(APPID) $(LAYER_NAME) 2>&1 | tee test.log
+test: layer
+	@$(MAKE) --no-print-directory test-dynamic
 
 help:
 	@echo "  ll-killer - 基于Makefile的玲珑项目管理工具"
@@ -138,10 +146,12 @@ help:
 	@echo "    update        更新APT软件源缓存"
 	@echo "    install       安装主包和额外依赖到构建环境"
 	@echo "    layer         构建layer文件"
-	@echo "    clean         清除所有生成的文件和layer"
+	@echo "    clean         清除所有生成的文件、测试输出和layer"
 	@echo "    clean-apt     清除APT相关缓存文件"
 	@echo "    clean-fs      清除构建文件系统内容"
 	@echo "    clean-ll      清除玲珑构建输出"
+	@echo "    clean-mk      清除$(CONFIG_TARGET)配置文件"
+	@echo "    test          执行自动化测试"
 	@echo "    help          显示本帮助信息"
 	@echo ""
 	@echo "  配置变量:  KEY=VALUE 说明 (当前值)"
@@ -190,8 +200,7 @@ config: $(CONFIG_TARGET)
 layer-dynamic: $(LAYER_NAME)
 layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
-
 all: layer
 
-.PHONY: all config init update install layer layer-dynamic clean clean-apt clean-ll clean-fs help
+.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-apt clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
