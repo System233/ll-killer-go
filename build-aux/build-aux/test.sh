@@ -43,7 +43,7 @@ ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh"
 
 mkdir -p tests
 TASKLOG="tests/task.log"
-ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" extract "$TASKLOG"
+ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG"
 
 i=0
 echo "[正在测试启动命令]"
@@ -52,7 +52,7 @@ while read args; do
     KILLER_TEST_SCREENSHOT="tests/screen$i-%d.jpg" \
         KILLER_TEST_STDIO="tests/output-$i.log" \
         xvfb-run -a "$(dirname $0)/test-display.sh" \
-        ll-cli run "${APPID}" -- "${ARGS[@]}"
+        "${ARGS[@]}"
     i=$((i + 1))
 done <"$TASKLOG"
 $SUDO ll-cli uninstall "$1"

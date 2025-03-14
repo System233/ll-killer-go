@@ -20,6 +20,9 @@ if [ "${#DIR_LIST}" -eq "0" ]; then
 fi
 while read desktop; do
     while read icon; do
+        if [ -z "$icon" ];then
+            continue
+        fi
         found=$(find "${SHARE_DIR}/icons" "/usr/share/icons" "/usr/share/pixmaps" \( -name "${icon}.xpm" -o -name "${icon}.png" -o -name "${icon}.svg" \) -print -quit)
         if [ ! -e "$found" ]; then
             log_error "$desktop:$icon: 找不到此图标"
