@@ -28,6 +28,7 @@ var BuildFlag struct {
 	CWD               string
 	Strict            bool
 	Ptrace            bool
+	IsInLinglong      bool
 	EncodedArgs       string
 	Self              string
 	Args              []string
@@ -37,25 +38,21 @@ var BuildFlag struct {
 
 const BuildCommandDescription = `进入玲珑构建环境，可执行 apt 安装等构建操作。`
 const BuildCommandHelp = `
-# 直接运行 ll-killer build 进入交互式构建环境
+# 直接运行 ll-killer build 进入构建环境shell
 <program> build
 
 # 使用 ll-killer build -- <命令> 直接执行指定构建命令
-<program> build
+<program> build -- apt install <deb>
 
-# 使用 fuse-overlayfs 进行构建，指定 fuse-overlayfs 命令路径
-<program> build --fuse-overlayfs /path/to/fuse-overlayfs
-
-# 使用 fuse-overlayfs，并传入额外的命令参数
-<program> build --fuse-overlayfs-args "--option=value"
-
-# 启用严格模式，确保构建环境与运行时环境一致，且不包含开发工具（默认行为）
-<program> build --strict
-
+* 如需导出layer文件，请使用layer系列命令。
+<program> layer build
 `
 
 func GetBuildArgs() []string {
-	args := []string{}
+	args := []string{
+		fmt.Sprint("--strict=", BuildFlag.Strict),
+		fmt.Sprint("--run-in-linglong=", BuildFlag.IsInLinglong),
+	}
 
 	if BuildFlag.RootFS != "" {
 		args = append(args, "--rootfs", BuildFlag.RootFS)
@@ -65,11 +62,8 @@ func GetBuildArgs() []string {
 		args = append(args, "--cwd", BuildFlag.CWD)
 	}
 
-	if BuildFlag.Strict {
-		args = append(args, "--strict")
-	}
 	if _ptrace.IsSupported {
-		args = append(args, "--ptrace="+fmt.Sprint(BuildFlag.Ptrace))
+		args = append(args, fmt.Sprint("--ptrace=", BuildFlag.Ptrace))
 	}
 
 	if BuildFlag.FuseOverlayFS != "" {
@@ -237,16 +231,6 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	reexec.Register("MountOverlay", MountOverlay)
 	reexec.Register("MountOverlayStage2", MountOverlayStage2)
 	if !reexec.Init() {
-		if BuildFlag.Strict {
-			encodedArgs := []string{}
-			args := GetBuildArgs()
-			for _, str := range args {
-				encoded := base64.StdEncoding.EncodeToString([]byte(str))
-				encodedArgs = append(encodedArgs, encoded)
-			}
-			extArgs := []string{"ll-builder", "run", "--exec", fmt.Sprintf("%s build --encoded-args %s", BuildFlag.Self, strings.Join(encodedArgs, ","))}
-			utils.Exec(extArgs...)
-		}
 		if BuildFlag.EncodedArgs != "" {
 			args := []string{}
 			for _, item := range strings.Split(BuildFlag.EncodedArgs, ",") {
@@ -265,7 +249,7 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 				Args:          args,
 				NoDefaultArgs: true,
 			})
-		} else {
+		} else if BuildFlag.IsInLinglong {
 			args := GetBuildArgs()
 			args = append([]string{"build"}, args...)
 			return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
@@ -275,7 +259,19 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 				Args:          args,
 				NoDefaultArgs: true,
 			})
-
+		} else {
+			encodedArgs := []string{}
+			target := "run"
+			if !BuildFlag.Strict {
+				target = "build"
+			}
+			args := GetBuildArgs()
+			for _, str := range args {
+				encoded := base64.StdEncoding.EncodeToString([]byte(str))
+				encodedArgs = append(encodedArgs, encoded)
+			}
+			extArgs := []string{"ll-builder", target, "--exec", fmt.Sprintf("%s build --encoded-args %s", BuildFlag.Self, strings.Join(encodedArgs, ","))}
+			utils.Exec(extArgs...)
 		}
 	}
 	return nil
@@ -308,12 +304,12 @@ func CreateBuildCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&BuildFlag.EncodedArgs, "encoded-args", "", "编码后的参数")
 	cmd.Flags().StringVar(&BuildFlag.Self, "self", execPath, "ll-killer可执行文件路径")
-	cmd.Flags().BoolVarP(&BuildFlag.Strict, "strict", "x", os.Getenv("LINGLONG_APPID") == "", "严格模式，启动一个与运行时环境相同的构建环境，确保环境一致性（不含gcc等工具）")
+	cmd.Flags().BoolVar(&BuildFlag.IsInLinglong, "run-in-linglong", false, "当前命令是否在玲珑容器中运行")
+	cmd.Flags().BoolVarP(&BuildFlag.Strict, "strict", "x", true, "严格模式，启动一个与运行时环境相同的构建环境，确保环境一致性（不含gcc等工具）")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFS, "fuse-overlayfs", "", "外部fuse-overlayfs命令路径(可选)")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFSArgs, "fuse-overlayfs-args", "", "fuse-overlayfs命令额外参数")
 
 	cmd.Flags().MarkHidden("encoded-args")
-	// cmd.Flags().MarkHidden("self")
-	// cmd.Flags().MarkHidden("cwd")
+	cmd.Flags().SortFlags = false
 	return cmd
 }
