@@ -299,7 +299,7 @@ type MountOption struct {
 func MountAll(opts []MountOption) error {
 	for _, opt := range opts {
 		if err := opt.Mount(); err != nil {
-			return err
+			return fmt.Errorf("mount:%s:%v", opt.Target, err)
 		}
 	}
 	return nil
@@ -496,7 +496,7 @@ func BuildHelpMessage(help string) string {
 func GetKillerExec() (string, error) {
 	path, err := os.Executable()
 	if err != nil {
-		path, err = filepath.EvalSymlinks("/proc/self/exe")
+		path, err = filepath.Abs(os.Args[0])
 		if err != nil {
 			return "", err
 		}

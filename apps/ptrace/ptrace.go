@@ -29,9 +29,9 @@ const PtraceCommandHelp = `
 
 const IsSupported = internal.IsSupported
 
-func Ptrace(self string, args []string) {
+func Ptrace(self string, args []string) error {
 	args = append([]string{self, "ptrace", "--"}, args...)
-	utils.Exec(args...)
+	return utils.ExecRaw(args...)
 }
 func HandlePtraceEvent(process *os.Process, pid int) error {
 	utils.Debug("HandlePtraceEvent", pid)

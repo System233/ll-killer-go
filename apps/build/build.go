@@ -16,9 +16,10 @@ import (
 
 	_ptrace "github.com/System233/ll-killer-go/apps/ptrace"
 	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/reexec"
 	"github.com/System233/ll-killer-go/utils"
+	"golang.org/x/sys/unix"
 
-	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ var BuildFlag struct {
 	CWD               string
 	Strict            bool
 	Ptrace            bool
-	IsInLinglong      bool
+	NoBuilder         bool
 	EncodedArgs       string
 	Self              string
 	Args              []string
@@ -51,7 +52,7 @@ const BuildCommandHelp = `
 func GetBuildArgs() []string {
 	args := []string{
 		fmt.Sprint("--strict=", BuildFlag.Strict),
-		fmt.Sprint("--run-in-linglong=", BuildFlag.IsInLinglong),
+		fmt.Sprint("--no-builder=", BuildFlag.NoBuilder),
 	}
 
 	if BuildFlag.RootFS != "" {
@@ -86,23 +87,22 @@ func GetBuildArgs() []string {
 	return args
 }
 
-func MountOverlayStage2() {
-
+func MountOverlayStage2() error {
 	overlayDir := path.Join(BuildFlag.CWD, config.FileSystemDir)
 	mergedDir := path.Join(overlayDir, "merged")
 	tmpRootFS := BuildFlag.TmpRootFS
 	err := syscall.PivotRoot(tmpRootFS+mergedDir, tmpRootFS+mergedDir+BuildFlag.RootFS)
 	if err != nil {
-		utils.ExitWith(err, "PivotRoot2")
+		return fmt.Errorf("PivotRoot2:%v", err)
 	}
 	if BuildFlag.Ptrace && _ptrace.IsSupported {
-		_ptrace.Ptrace(BuildFlag.Self, BuildFlag.Args)
+		return _ptrace.Ptrace(BuildFlag.Self, BuildFlag.Args)
 	} else {
-		utils.Exec(BuildFlag.Args...)
+		return utils.ExecRaw(BuildFlag.Args...)
 	}
 
 }
-func MountOverlay() {
+func MountOverlay() error {
 	overlayDir := path.Join(BuildFlag.CWD, config.FileSystemDir)
 	aptCacheDir := path.Join(BuildFlag.CWD, config.AptCacheDir)
 	aptDataDir := path.Join(BuildFlag.CWD, config.AptDataDir)
@@ -119,16 +119,16 @@ func MountOverlay() {
 		aptDataDir,
 	}, 0755)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 	err = utils.MountBind(BuildFlag.RootFS, BuildFlag.RootFS, 0)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 
 	err = utils.MountBind("/", tmpRootFS, 0)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 
 	err = utils.MountAll([]utils.MountOption{
@@ -154,11 +154,11 @@ func MountOverlay() {
 		},
 	})
 	if err != nil {
-		utils.ExitWith(err, "MountAll")
+		return fmt.Errorf("挂载目录失败:%v", err)
 	}
 	err = syscall.PivotRoot(BuildFlag.RootFS, cwdRootFSPivoted)
 	if err != nil {
-		utils.ExitWith(err, "PivotRoot", BuildFlag.RootFS, cwdRootFSPivoted)
+		return fmt.Errorf("切换根目录失败:%v", err)
 	}
 	fuseOverlayFSOption := fmt.Sprintf("lowerdir=%s:%s,upperdir=%s,workdir=%s,squash_to_root",
 		tmpRootFS+lowerDir,
@@ -175,8 +175,9 @@ func MountOverlay() {
 		err = utils.ExecFuseOvlMain(fuseOverlayFSArgs)
 	}
 	if err != nil {
-		utils.ExitWith(err, "fuse-overlayfs:", utils.GlobalFlag.FuseOverlayFS, fuseOverlayFSArgs)
+		return fmt.Errorf("fuse-overlayfs:%v", err)
 	}
+	defer unix.Unmount(tmpRootFS+mergedDir, unix.MNT_DETACH)
 	err = utils.MountAll([]utils.MountOption{
 		{
 			Source: tmpRootFS + "/dev",
@@ -216,12 +217,10 @@ func MountOverlay() {
 		},
 	})
 	if err != nil {
-		utils.ExitWith(err, "MountAll2")
+		return fmt.Errorf("挂载文件系统失败:%v", err)
 	}
-	err = utils.SwitchTo("MountOverlayStage2", &utils.SwitchFlags{Cloneflags: syscall.CLONE_NEWNS})
-	if err != nil {
-		utils.ExitWith(err)
-	}
+	return utils.SwitchTo("MountOverlayStage2", &utils.SwitchFlags{Cloneflags: syscall.CLONE_NEWNS})
+
 }
 
 func BuildMain(cmd *cobra.Command, args []string) error {
@@ -230,13 +229,17 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	utils.GlobalFlag.FuseOverlayFSArgs = BuildFlag.FuseOverlayFSArgs
 	reexec.Register("MountOverlay", MountOverlay)
 	reexec.Register("MountOverlayStage2", MountOverlayStage2)
-	if !reexec.Init() {
+	ok, err := reexec.Init()
+	if err != nil {
+		return err
+	}
+	if !ok {
 		if BuildFlag.EncodedArgs != "" {
 			args := []string{}
 			for _, item := range strings.Split(BuildFlag.EncodedArgs, ",") {
 				value, err := base64.StdEncoding.DecodeString(item)
 				if err != nil {
-					utils.ExitWith(err)
+					return err
 				}
 				args = append(args, string(value))
 			}
@@ -249,9 +252,16 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 				Args:          args,
 				NoDefaultArgs: true,
 			})
-		} else if BuildFlag.IsInLinglong {
+		} else if BuildFlag.NoBuilder {
 			args := GetBuildArgs()
 			args = append([]string{"build"}, args...)
+			if os.Getuid() == 0 && os.Getgid() == 0 {
+				return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
+					Cloneflags:    syscall.CLONE_NEWNS,
+					Args:          args,
+					NoDefaultArgs: true,
+				})
+			}
 			return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
 				UID:           0,
 				GID:           0,
@@ -304,7 +314,7 @@ func CreateBuildCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&BuildFlag.EncodedArgs, "encoded-args", "", "编码后的参数")
 	cmd.Flags().StringVar(&BuildFlag.Self, "self", execPath, "ll-killer可执行文件路径")
-	cmd.Flags().BoolVar(&BuildFlag.IsInLinglong, "run-in-linglong", false, "当前命令是否在玲珑容器中运行")
+	cmd.Flags().BoolVar(&BuildFlag.NoBuilder, "no-builder", os.Getenv(config.KillerPackerEnv) != "", "不使用ll-builder环境")
 	cmd.Flags().BoolVarP(&BuildFlag.Strict, "strict", "x", true, "严格模式，启动一个与运行时环境相同的构建环境，确保环境一致性（不含gcc等工具）")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFS, "fuse-overlayfs", "", "外部fuse-overlayfs命令路径(可选)")
 	cmd.Flags().StringVar(&BuildFlag.FuseOverlayFSArgs, "fuse-overlayfs-args", "", "fuse-overlayfs命令额外参数")
