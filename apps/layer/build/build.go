@@ -65,6 +65,7 @@ const BuildCommandDescription = `无需ll-builder, 直接将当前项目构建�
  `
 const BuildCommandHelp = ``
 const PostSetupScript = "build-aux/post-setup.sh"
+const WorkDir = "linglong/output"
 
 var Config layer.Config
 var LayerInfo layer.LayerInfo
@@ -80,6 +81,7 @@ func PostPackUp(workDir string) {
 	buildHostDir := path.Join(workDir, "build")
 	utils.Must(os.MkdirAll(filesDir, 0755))
 	utils.Must(utils.MountBind(buildHostDir, filesDir, syscall.MS_BIND))
+	// utils.Must(os.Link(buildHostDir, filesDir))
 
 	// 创建entries目录
 	entriesDir := path.Join(baseDir, "entries")
@@ -90,6 +92,7 @@ func PostPackUp(workDir string) {
 	if _, err := os.Stat(shareSrc); err == nil {
 		shareDst := path.Join(entriesDir, "share")
 		utils.Must(utils.MountBind(shareSrc, shareDst, 0))
+		// utils.Must(os.Link(shareSrc, shareDst))
 	}
 
 	// 生成install文件
@@ -136,7 +139,7 @@ func PostPackUp(workDir string) {
 	}), "生成layer失败")
 }
 
-func SetupFilesystem(workDir string) {
+func SetupFilesystem() {
 	err := utils.LoadYamlFile(config.LinglongYaml, &Config)
 	if err != nil {
 		utils.ExitWith(err)
@@ -145,19 +148,19 @@ func SetupFilesystem(workDir string) {
 	utils.Must(LayerInfo.ParseLayerInfo(Config), "解析yaml错误")
 	LayerInfo.Print()
 
-	if utils.IsExist(workDir) {
-		utils.Must(os.RemoveAll(workDir), "无法移除"+workDir)
+	if utils.IsExist(WorkDir) {
+		utils.Must(os.RemoveAll(WorkDir), "无法移除"+WorkDir)
 	}
-	if err := os.MkdirAll(workDir, 0755); err != nil {
+	if err := os.MkdirAll(WorkDir, 0755); err != nil {
 		utils.ExitWith(err)
 	}
 
 	configID := Config.Package.ID
 	configBuild := Config.Build
-	rootfsPath := path.Join(workDir, "rootfs")
+	rootfsPath := path.Join(WorkDir, "rootfs")
 
 	// 挂载宿主机根目录到rootfsPath（只读）
-	if err := utils.Mount(&utils.MountOption{Source: "/", Target: rootfsPath, FSType: "merge", Flags: unix.MS_RDONLY}); err != nil {
+	if err := utils.Mount(&utils.MountOption{Source: Flag.RootFs, Target: rootfsPath, FSType: "merge", Flags: unix.MS_RDONLY}); err != nil {
 		utils.ExitWith(err, "挂载宿主机根目录失败")
 	}
 
@@ -183,7 +186,7 @@ func SetupFilesystem(workDir string) {
 	}
 
 	// 创建并挂载输出目录
-	buildHostDir := path.Join(workDir, "build")
+	buildHostDir := path.Join(WorkDir, "build")
 	if err := os.MkdirAll(buildHostDir, 0755); err != nil {
 		utils.ExitWith(err, "创建输出目录失败")
 	}
@@ -242,26 +245,31 @@ func RunPostSetup(workDir string) {
 		utils.ExitWith(err, "后处理失败")
 	}
 }
+func PostFilesystem() {
+	runHostRootfs := "/run/host/rootfs"
+	rootfsPath := path.Join(WorkDir, "rootfs")
+	utils.Must(unix.PivotRoot(runHostRootfs, rootfsPath), "切换回主机失败")
+}
 func BuildLayer() {
 	killerPackerEnv := os.Getenv(config.KillerPackerEnv)
 	if killerPackerEnv == "" {
 		os.Setenv(config.KillerPackerEnv, "1")
 	}
-	workDir := "linglong/output"
 	log.Println("[准备构建环境]")
-	SetupFilesystem(workDir)
+	SetupFilesystem()
 
 	log.Println("[运行构建脚本]")
-	RunBuildScript(workDir)
+	RunBuildScript(WorkDir)
 
 	if !Flag.NoPostSetup {
 		log.Println("[文件后处理]")
-		RunPostSetup(workDir)
+		RunPostSetup(WorkDir)
 	}
+	PostFilesystem()
 
 	if !Flag.NoLayer {
 		log.Println("[打包输出]")
-		PostPackUp(workDir)
+		PostPackUp(WorkDir)
 	}
 
 }
