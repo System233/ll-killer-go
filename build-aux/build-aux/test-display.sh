@@ -40,7 +40,7 @@ APP_PID=$!
 
 log "进程已启动"
 for((i=0;i<${KILLER_TEST_TIMEOUT};++i));do
-    WIN_ID=$(xdotool search --onlyvisible ".*"  2>/dev/null | xargs -I{} xdotool getwindowpid {}  2>/dev/null)
+    WIN_ID=$(xdotool search --onlyvisible ".*"  2>/dev/null | xargs -r -I{} xdotool getwindowpid {}  2>/dev/null)
     if [ -n "$WIN_ID" ];then
         log "已检测到窗口:WIN_ID=${WIN_ID}"
         break

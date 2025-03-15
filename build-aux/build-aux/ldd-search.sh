@@ -8,7 +8,7 @@ if [ "$INPUT" == "-" ];then
     cat $INPUT>"$TMP_FILE"
     INPUT="$TMP_FILE"
 fi
-SEARCHED=$(cat "$INPUT" | xargs -P$(nproc) -I{} sh -c 'apt-file find -x "{}$"| grep -P "^lib|/usr/lib/x86_64-linux-gnu/" | sort -urk2 | head -n1')
+SEARCHED=$(cat "$INPUT" | xargs -r -P$(nproc) -I{} sh -c 'apt-file find -x "{}$"| grep -P "^lib|/usr/lib/x86_64-linux-gnu/" | sort -urk2 | head -n1')
 grep -Fvf <(echo "$SEARCHED" | awk -F/ '{print $NF}') "$INPUT" >$MISSING
 echo "$SEARCHED" |grep -vP "^\s*$"| cut -d: -f1 | sort -u >$FOUND
 

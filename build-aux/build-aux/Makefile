@@ -15,6 +15,7 @@ KILLER ?= $(if $(wildcard ll-killer),./ll-killer,ll-killer)
 BUILD_ARGS ?=
 CREATE_ARGS ?=
 ENABLE_LDD_CHECK ?= 1
+LDD_CHECK_MODE ?= fast
 
 SOURCES_LIST = sources.list
 UPDATE_TARGET ?= apt-update.log
@@ -54,6 +55,7 @@ $(CONFIG_TARGET):
 	@echo "CREATE_ARGS ?= $(CREATE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "BUILD_ARGS ?= $(BUILD_ARGS)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_LDD_CHECK ?= $(ENABLE_LDD_CHECK)" >> $(CONFIG_TARGET)
+	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
 	@echo "PKG_INFO ?= $(PKG_INFO)" >> $(CONFIG_TARGET)
@@ -64,6 +66,7 @@ $(CONFIG_TARGET):
 	@echo "LDD_FOUND_TARGET ?= $(LDD_FOUND_TARGET)" >> $(CONFIG_TARGET)
 	@echo "LDD_SEARCH_TARGET ?= $(LDD_SEARCH_TARGET)" >> $(CONFIG_TARGET)
 	@echo "LDD_INSTALL_TARGET ?= $(LDD_INSTALL_TARGET)" >> $(CONFIG_TARGET)
+	
 
 $(SOURCES_LIST):
 	@echo "[从主机复制sources.list]"
@@ -94,7 +97,7 @@ $(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS)
 
 $(LDD_CHECK_TARGET): $(INSTALL_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
-	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh > $(LDD_CHECK_TARGET)~
+	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
 	$(MOVE_LOG)
 
 .INTERMEDIATE: ldd_search
@@ -127,7 +130,7 @@ clean-ll:
 clean-log:
 	rm -rf *.log 
 clean-layer:
-	rm -rf *.log *.layer
+	rm -rf *.layer
 clean: clean-ll clean-fs clean-test clean-log clean-layer
 clean-mk:
 	rm -rf $(CONFIG_TARGET)
@@ -165,12 +168,13 @@ help:
 	@echo "    help          显示本帮助信息"
 	@echo ""
 	@echo "  配置变量:  KEY=VALUE 说明 (当前值)"
-	@echo "    PKG=name           要打包的Debian软件包名称 ($(PKG))"
-	@echo "    APPID=name.linyaps 玲珑应用ID ($(APPID))"
-	@echo "    KILLER=ll-killer   ll-killer工具路径 ($(KILLER))"
-	@echo "    ENABLE_LDD_CHECK=1 是否启用依赖检查 ($(ENABLE_LDD_CHECK))"
-	@echo "    CREATE_ARGS=       传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
-	@echo "    BUILD_ARGS=        传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
+	@echo "    PKG=name                 要打包的Debian软件包名称 ($(PKG))"
+	@echo "    APPID=name.linyaps       玲珑应用ID ($(APPID))"
+	@echo "    KILLER=ll-killer         ll-killer工具路径 ($(KILLER))"
+	@echo "    ENABLE_LDD_CHECK=1       是否启用依赖检查 ($(ENABLE_LDD_CHECK))"
+	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
+	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
+	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
 	@echo ""
 	@echo "  典型工作流:"
 	@echo "    0. 准备自定义的sources.list或留空，自动从主机复制"
