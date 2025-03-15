@@ -25,9 +25,9 @@ while read desktop; do
         fi
         found=$(find "${SHARE_DIR}/icons" "/usr/share/icons" "/usr/share/pixmaps" \( -name "${icon}.xpm" -o -name "${icon}.png" -o -name "${icon}.svg" \) -print -quit)
         if [ ! -e "$found" ]; then
-            log_error "$desktop:$icon: 找不到此图标"
+            log_error "[失败] $desktop:$icon: 找不到此图标"
         else
-            echo "图标正常:$desktop: $icon"
+            echo "[成功] $desktop: $icon"
         fi
     done <<<$(grep -oP "^Icon.*?=\K.*$" "$desktop")
 
@@ -40,9 +40,9 @@ while read desktop; do
             TEST_CMD=("$ENTRYPOINT" which "${MAIN}")
         fi
         if ! "${TEST_CMD[@]}" >/dev/null; then
-            log_error "$desktop:$MAIN: 找不到此启动文件"
+            log_error "[失败] $desktop:$MAIN: 找不到此启动文件"
         else
-            echo "启动项正常:$desktop: $args"
+            echo "[成功] $desktop: $args"
         fi
     done <<<$(grep -oP "^Exec(Start)?.*?=.*?--\s*\K.*$" "$desktop")
 done <<<$(find "${DIR_LIST[@]}" \( -name "*.desktop" -o -name "*.service" -o -name "*.conf" \))

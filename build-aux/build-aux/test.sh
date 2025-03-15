@@ -6,9 +6,7 @@ if [ "$#" != "2" ];then
     echo "用法：$0 <应用APPID> <layer文件>"
     exit 1
 fi
-DEPS=("xvfb-run" "xdotool" scrot)
 NEEDS=()
-DEPS_PKG=("xvfb" "xdotool" scrot)
 function check_dep(){
     dep=$1
     need=${2:-$1}
@@ -38,7 +36,13 @@ fi
 
 $SUDO ll-cli uninstall "$APPID" &>/dev/null ||true
 $SUDO ll-cli install "$LAYER"
-echo "[正在测试快捷方式]"
+
+cleanup() {
+    $SUDO ll-cli uninstall "$APPID"
+}
+trap cleanup EXIT
+
+echo "[正在测试快捷方式/服务单元]"
 ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh"
 
 mkdir -p tests
@@ -46,7 +50,7 @@ TASKLOG="tests/task.log"
 ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG"
 
 i=0
-echo "[正在测试启动命令]"
+echo "[正在测试启动项]"
 while read args; do
     ARGS=($args)
     KILLER_TEST_SCREENSHOT="tests/screen$i-%d.jpg" \
@@ -55,6 +59,5 @@ while read args; do
         "${ARGS[@]}"
     i=$((i + 1))
 done <"$TASKLOG"
-$SUDO ll-cli uninstall "$1"
 
-echo "全部测试成功，你可以在tests中找到测试输出。"
+echo "测试完成，可在tests中查看测试输出。"

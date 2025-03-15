@@ -134,7 +134,7 @@ clean-mk:
 clean-all: clean clean-apt
 
 test-dynamic: $(LAYER_NAME)
-	@echo "[正在启动测试]"
+	@echo "[执行自动化测试]"
 	build-aux/test.sh $(APPID) $(LAYER_NAME) 2>&1 | tee test.log
 test: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory test-dynamic
