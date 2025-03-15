@@ -1,4 +1,35 @@
 
+<a name="v1.4.14"></a>
+## [v1.4.14](https://github.com/System233/ll-killer-go/compare/v1.4.13...v1.4.14) (2025-03-15)
+
+### 代码调整
+
+* 优化测试输出信息
+
+### 兼容性更改
+
+* 取消将ll-killer复制到项目位置
+
+### 性能改进
+
+* 增加快速依赖检查模式，详情查看make help
+
+### 新增功能
+
+* Makefile添加ENABLE_INSTALL选项，可用于关闭默认的apt安装功能
+* Makefile增加可选build.sh/post-build.sh步骤
+
+### 构建系统
+
+* 优化Makefile构建依赖
+
+### 错误修复
+
+* 修复并优化自动化测试
+* 测试时排除隐藏的启动项 feat: 测试服务单元和右键菜单
+* 消除低版本scrot不支持of选项的提示
+
+
 <a name="v1.4.13"></a>
 ## [v1.4.13](https://github.com/System233/ll-killer-go/compare/v1.4.12...v1.4.13) (2025-03-15)
 
