@@ -15,6 +15,7 @@ KILLER ?= $(if $(wildcard ll-killer),./ll-killer,ll-killer)
 BUILD_ARGS ?=
 CREATE_ARGS ?=
 ENABLE_LDD_CHECK ?= 1
+ENABLE_INSTALL ?=1
 LDD_CHECK_MODE ?= fast
 
 SOURCES_LIST = sources.list
@@ -56,10 +57,16 @@ else
     EXTRA_POST_BUILD_TARGET = $(POST_BUILD_TARGET)
 endif
 
+ifeq ($(ENABLE_INSTALL),1)
+	INSTALL_DEP := $(INSTALL_TARGET)
+else
+	INSTALL_DEP :=$(YAML_CONFIG) $(EXTRA_BUILD_TARGET)
+endif
+
 ifeq ($(ENABLE_LDD_CHECK),1)
 	LAYER_DEP := $(LDD_INSTALL_TARGET)
 else
-	LAYER_DEP := $(INSTALL_TARGET)
+	LAYER_DEP := $(INSTALL_DEP)
 endif
 
 export KILLER_BUILD_ARGS := $(BUILD_ARGS)
@@ -72,6 +79,7 @@ $(CONFIG_TARGET):
 	@echo "CREATE_ARGS ?= $(CREATE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "BUILD_ARGS ?= $(BUILD_ARGS)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_LDD_CHECK ?= $(ENABLE_LDD_CHECK)" >> $(CONFIG_TARGET)
+	@echo "ENABLE_INSTALL ?= $(ENABLE_INSTALL)" >> $(CONFIG_TARGET)
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
@@ -121,12 +129,12 @@ $(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS) $(EXTRA_BUILD_TARGET)
 	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(PKG) $(shell cat $(EXTRA_DEPS)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-$(POST_BUILD_TARGET): $(INSTALL_TARGET) $(EXTRA_POST_BUILD)
+$(POST_BUILD_TARGET): $(INSTALL_DEP) $(EXTRA_POST_BUILD)
 	@echo "[执行自定义后构建]"
 	$(KILLER) build $(BUILD_ARGS) --ptrace -- $(EXTRA_POST_BUILD) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-$(LDD_CHECK_TARGET):  $(INSTALL_TARGET) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
+$(LDD_CHECK_TARGET):  $(INSTALL_DEP) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
 	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
 	$(MOVE_LOG)
@@ -202,7 +210,8 @@ help:
 	@echo "    PKG=name                 要打包的Debian软件包名称 ($(PKG))"
 	@echo "    APPID=name.linyaps       玲珑应用ID ($(APPID))"
 	@echo "    KILLER=ll-killer         ll-killer工具路径 ($(KILLER))"
-	@echo "    ENABLE_LDD_CHECK=1       是否启用依赖检查 ($(ENABLE_LDD_CHECK))"
+	@echo "    ENABLE_LDD_CHECK=0|1     是否启用依赖检查 ($(ENABLE_LDD_CHECK))"
+	@echo "    ENABLE_INSTALL=0|1       是否启用自动安装依赖 ($(ENABLE_INSTALL))"
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
