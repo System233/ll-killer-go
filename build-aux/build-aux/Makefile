@@ -20,9 +20,13 @@ LDD_CHECK_MODE ?= fast
 SOURCES_LIST = sources.list
 UPDATE_TARGET ?= apt-update.log
 INSTALL_TARGET ?= apt-install.log
+BUILD_TARGET ?= build.log
+POST_BUILD_TARGET ?= post-build.log
 PKG_INFO ?= pkg.info
 YAML_CONFIG ?= linglong.yaml
 EXTRA_DEPS ?= deps.list
+EXTRA_BUILD ?= build.sh
+EXTRA_POST_BUILD ?= post-build.sh
 LDD_CHECK_TARGET ?= ldd-check.log
 LDD_FOUND_TARGET ?= ldd-found.log
 LDD_NOTFOUND_TARGET ?= ldd-notfound.log
@@ -39,6 +43,19 @@ ifeq ($(wildcard $(YAML_CONFIG)),$(YAML_CONFIG))
 else
 	LAYER_NAME := $(APPID).layer
 endif
+
+ifeq ($(wildcard $(EXTRA_BUILD)),)
+    EXTRA_BUILD_TARGET =
+else
+    EXTRA_BUILD_TARGET = $(BUILD_TARGET)
+endif
+
+ifeq ($(wildcard $(EXTRA_POST_BUILD)),)
+    EXTRA_POST_BUILD_TARGET =
+else
+    EXTRA_POST_BUILD_TARGET = $(POST_BUILD_TARGET)
+endif
+
 ifeq ($(ENABLE_LDD_CHECK),1)
 	LAYER_DEP := $(LDD_INSTALL_TARGET)
 else
@@ -58,6 +75,10 @@ $(CONFIG_TARGET):
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
+	@echo "EXTRA_BUILD ?= $(EXTRA_BUILD)" >> $(CONFIG_TARGET)
+	@echo "EXTRA_POST_BUILD ?= $(EXTRA_POST_BUILD)" >> $(CONFIG_TARGET)
+	@echo "BUILD_TARGET ?= $(BUILD_TARGET)" >> $(CONFIG_TARGET)
+	@echo "POST_BUILD_TARGET ?= $(POST_BUILD_TARGET)" >> $(CONFIG_TARGET)
 	@echo "PKG_INFO ?= $(PKG_INFO)" >> $(CONFIG_TARGET)
 	@echo "YAML_CONFIG ?= $(YAML_CONFIG)" >> $(CONFIG_TARGET)
 	@echo "EXTRA_DEPS ?= $(EXTRA_DEPS)" >> $(CONFIG_TARGET)
@@ -90,12 +111,22 @@ $(YAML_CONFIG): $(PKG_INFO)
 	@echo "[创建玲珑项目]"
 	$(KILLER) create --from $(PKG_INFO) --id $(APPID) $(CREATE_ARGS) 
 
-$(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS)
+$(BUILD_TARGET): $(YAML_CONFIG) $(EXTRA_BUILD)
+	@echo "[执行自定义构建]"
+	$(KILLER) build $(BUILD_ARGS) --ptrace -- $(EXTRA_BUILD) $(APPEND_LOG)
+	$(MOVE_LOG)
+
+$(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS) $(EXTRA_BUILD_TARGET)
 	@echo "[将包安装至构建环境]"
 	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(PKG) $(shell cat $(EXTRA_DEPS)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-$(LDD_CHECK_TARGET): $(INSTALL_TARGET) build-aux/ldd-check.sh
+$(POST_BUILD_TARGET): $(INSTALL_TARGET) $(EXTRA_POST_BUILD)
+	@echo "[执行自定义后构建]"
+	$(KILLER) build $(BUILD_ARGS) --ptrace -- $(EXTRA_POST_BUILD) $(APPEND_LOG)
+	$(MOVE_LOG)
+
+$(LDD_CHECK_TARGET):  $(INSTALL_TARGET) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
 	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
 	$(MOVE_LOG)
@@ -114,7 +145,7 @@ $(LDD_INSTALL_TARGET): $(LDD_FOUND_TARGET)
 	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(shell cat $(LDD_FOUND_TARGET)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-$(LAYER_NAME): $(LAYER_DEP) $(BUILD_AUX_DEPS)
+$(LAYER_NAME): $(LAYER_DEP) $(EXTRA_POST_BUILD_TARGET) $(BUILD_AUX_DEPS)
 	@echo "[导出layer文件]"
 	$(KILLER) layer build -o $(LAYER_NAME)
 
@@ -195,6 +226,9 @@ help:
 	@echo "  特殊文件:"
 	@echo "    apt.conf.d      APT配置文件夹"
 	@echo "    auth.conf.d     APT授权配置文件夹（遇到APT源返回401时使用）"
+	@echo "    build-aux       辅助构建脚本目录"
+	@echo "    build.sh        自定义构建脚本"
+	@echo "    post-build.sh   自定义后构建脚本"
 	@echo "    build-aux       辅助构建脚本目录"
 	@echo "    sources.list    使用的APT源配置"
 	@echo "    sources.list.d  使用的APT源配置文件夹"
