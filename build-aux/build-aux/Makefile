@@ -259,5 +259,49 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
+.PHONY: all build-env config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
+
+OSTREE_MAKE = $(MAKE) -f build-aux/ostree.mk 
+OSTREE_CONFIG:=ost.mk
+OSTREE_BASE:=base.mk
+OSTREE_RUNTIME:=runtime.mk
+
+APP_BASE_DIR ?=
+APP_RUNTIME_DIR ?=
+APP_BASE=$(shell $(KILLER) layer build --print base)
+APP_RUNTIME=$(shell $(KILLER) layer build --print runtime)
+APP_MODULE=$(shell $(KILLER) layer build --print module)
+
+OSTREE_MAKE_BASE = $(OSTREE_MAKE) TARGET=$(OSTREE_BASE) ID=$(APP_BASE) MODLUE=$(APP_MODULE)
+OSTREE_MAKE_RUNTIME = $(OSTREE_MAKE) TARGET=$(OSTREE_RUNTIME) ID=$(APP_RUNTIME) MODLUE=$(APP_MODULE)
+
+APP_BASE_DIR=$(shell $(OSTREE_MAKE_BASE) show)
+APP_RUNTIME_DIR=$(shell $(OSTREE_MAKE_RUNTIME) show)
+
+$(OSTREE_BASE): $(YAML_CONFIG)
+	$(OSTREE_MAKE_BASE)
+$(OSTREE_RUNTIME): $(YAML_CONFIG)
+	$(OSTREE_MAKE_RUNTIME)
+
+$(OSTREE_CONFIG): $(OSTREE_BASE) $(YAML_CONFIG) 
+	@echo "APP_BASE_DIR=$(APP_BASE_DIR)" >$@
+	@echo "APP_RUNTIME_DIR=$(APP_RUNTIME_DIR)" >>$@
+
+OVERLAY_ROOT=$(PWD)/linglong/filesystem/
+OVERLAY_MERGED=$(OVERLAY_ROOT)/merged
+OVERLAY_DIFF=$(OVERLAY_ROOT)/diff
+OVERLAY_OVERWRITE=$(OVERLAY_ROOT)/overwrite
+OVERLAY_WORK=$(OVERLAY_ROOT)/work
+build-env:
+	@ll-killer exec \
+	--mount overlay:$(OVERLAY_MERGED)::overlay:lowerdir=$(OVERLAY_OVERWRITE):$(APP_BASE_DIR)/files,upperdir=$(OVERLAY_DIFF),workdir=$(OVERLAY_WORK) \
+	--mount "$(OSTREE_MAKE_RUNTIME):$(OVERLAY_MERGED)/runtime" \
+	--mount "/etc/resolv.conf:$(OVERLAY_MERGED)/etc/resolv.conf" \
+	--mount "/etc/localtime:$(OVERLAY_MERGED)/etc/localtime" \
+	--mount "/etc/timezone:$(OVERLAY_MERGED)/etc/timezone" \
+	--mount "/etc/machine-id:$(OVERLAY_MERGED)/etc/machine-id" \
+	--mount "/:$(OVERLAY_MERGED)/run/host/rootfs" \
+	--rootfs $(OVERLAY_MERGED) \
+	--root \
+	-- bash
