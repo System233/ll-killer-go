@@ -1,4 +1,12 @@
 
+<a name="v1.4.15"></a>
+## [v1.4.15](https://github.com/System233/ll-killer-go/compare/v1.4.14...v1.4.15) (2025-03-15)
+
+### 错误修复
+
+* 去除测试中的env.sh依赖
+
+
 <a name="v1.4.14"></a>
 ## [v1.4.14](https://github.com/System233/ll-killer-go/compare/v1.4.13...v1.4.14) (2025-03-15)
 
