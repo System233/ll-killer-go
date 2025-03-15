@@ -35,6 +35,8 @@ var Flag struct {
 	Uid            int
 	NoPostSetup    bool
 	PrintLayerName bool
+	PrintJson      bool
+	Print          string
 	NoLayer        bool
 	PackArgs       []string
 	Args           []string
@@ -293,16 +295,34 @@ func GetBuildArgs() []string {
 	}
 	return args
 }
-func PrintLayerName() error {
+func PrintLayerInfo(key string, json bool) error {
 	var cfg layer.Config
-	var info layer.LayerInfo
+	// var info layer.LayerInfo
+	type DumpInfo struct {
+		layer.LayerInfo
+		FileName string `json:"fileName"`
+	}
+	var info DumpInfo
 	if Flag.Target != "" {
 		fmt.Println(Flag.Target)
 		return nil
 	}
 	utils.Must(utils.LoadYamlFile(config.LinglongYaml, &cfg), "读取linglong.yaml失败")
 	utils.Must(info.ParseLayerInfo(cfg), "linglong.yaml配置不合法")
-	fmt.Println(info.FileName())
+	info.FileName = info.LayerInfo.FileName()
+	var mapData map[string]interface{}
+	data, err := utils.DumpJsonData(info)
+	utils.Must(err)
+	if json {
+		fmt.Println(string(data))
+		return nil
+	}
+	utils.Must(utils.LoadJsonData(data, &mapData))
+	value, ok := mapData[key]
+	if !ok {
+		return nil
+	}
+	fmt.Println(value)
 	return nil
 }
 func BuildMain(cmd *cobra.Command, args []string) error {
@@ -311,8 +331,12 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	if reexec.Init() {
 		return nil
 	}
-	if Flag.PrintLayerName {
-		return PrintLayerName()
+	if Flag.PrintLayerName || Flag.Print != "" || Flag.PrintJson {
+		target := "fileName"
+		if Flag.Print != "" {
+			target = Flag.Print
+		}
+		return PrintLayerInfo(target, Flag.PrintJson)
 	}
 	return utils.SwitchTo("BuildLayer", &utils.SwitchFlags{
 		UID:           0,
@@ -342,6 +366,8 @@ func CreateBuildCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&Flag.NoPostSetup, "no-post-setup", false, "不对构建结果进行后处理")
 	cmd.Flags().BoolVar(&Flag.NoLayer, "no-layer", false, "不输出layer文件")
 	cmd.Flags().BoolVar(&Flag.PrintLayerName, "print-layer-name", false, "输出构建的layer文件名")
+	cmd.Flags().StringVar(&Flag.Print, "print", "", "输出应用参数后退出")
+	cmd.Flags().BoolVar(&Flag.PrintJson, "json", false, "输出应用参数的JSON格式后退出")
 	cmd.Flags().StringVarP(&Flag.Target, "output", "o", "", "输出的layer文件名")
 	cmd.Flags().StringSliceVar(&Flag.PackArgs, "erofs-args", []string{}, "其他mkfs.erofs选项,逗号分隔")
 	cmd.Flags().SortFlags = false
