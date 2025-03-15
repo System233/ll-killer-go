@@ -1,6 +1,13 @@
 #!/bin/bash
 source $(dirname $0)/env.sh
 
+KILLER_EXEC=${KILLER_EXEC:-$(which ll-killer)}
+
+if [ -z "$KILLER_EXEC" ];then
+    echo "错误：未找到ll-killer，请确保通过ll-killer执行命令，或手动设置KILLER_EXEC环境变量。" >&2
+    exit 1
+fi
+
 echo "[准备文件系统]"
 setup-filesystem.sh
 

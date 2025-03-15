@@ -23,7 +23,7 @@ if [ ! ${#NEEDS} -eq 0 ];then
     echo "请尝试安装这些库：${NEEDS[@]}" >&2
     exit 1
 fi
-source $(dirname $0)/env.sh
+
 APPID="$1"
 LAYER="$2"
 echo "正在测试: APPID=${APPID} LAYER=${LAYER}"

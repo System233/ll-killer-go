@@ -1,5 +1,6 @@
 #!/bin/bash
-source $(dirname $0)/env.sh
+ENTRYPOINT_NAME=${ENTRYPOINT_NAME:-entrypoint.sh}
+ENTRYPOINT=${ENTRYPOINT:-/opt/apps/$LINGLONG_APPID/files/$ENTRYPOINT_NAME}
 SHARE_DIR="/opt/apps/${LINGLONG_APPID}/files/share"
 ERRORS=()
 function log_error() {
