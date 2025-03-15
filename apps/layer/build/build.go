@@ -27,6 +27,7 @@ import (
 
 var Flag struct {
 	RootFs         string
+	Runtime        string
 	Target         string
 	ExecPath       string
 	Compressor     string
@@ -168,6 +169,13 @@ func SetupFilesystem() {
 	runTmpfs := path.Join(rootfsPath, "run")
 	if err := utils.Mount(&utils.MountOption{Source: "tmpfs", Target: runTmpfs, FSType: "tmpfs"}); err != nil {
 		utils.ExitWith(err, "挂载run目录失败")
+	}
+
+	if Flag.Runtime != "" {
+		runtimeFS := path.Join(rootfsPath, "runtime")
+		if err := utils.Mount(&utils.MountOption{Source: Flag.Runtime, Target: runtimeFS}); err != nil {
+			utils.ExitWith(err, "挂载runtime目录失败")
+		}
 	}
 	// 创建并挂载/run/host/rootfs
 	runHostRootfs := path.Join(rootfsPath, "run/host/rootfs")
@@ -366,6 +374,7 @@ func CreateBuildCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&Flag.RootFs, "rootfs", "/", "根文件系统")
+	cmd.Flags().StringVar(&Flag.Runtime, "runtime", "", "runtime文件系统")
 	cmd.Flags().IntVarP(&Flag.BlockSize, "block-size", "b", 4096, "块大小")
 	cmd.Flags().StringVar(&Flag.ExecPath, "exec", layer.MkfsErofs, "指定mkfs.erofs命令位置")
 	cmd.Flags().StringVarP(&Flag.Compressor, "compressor", "z", "lz4hc", "压缩算法，请查看mkfs.erofs帮助")
