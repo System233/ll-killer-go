@@ -44,26 +44,26 @@ var Flag struct {
 }
 
 const BuildCommandDescription = `无需ll-builder, 直接将当前项目构建为layer。
- 此过程在宿主机上进行，提供与ll-builder类似的环境，绕过ll-builder，避免不必要的ostree提交和磁盘复制。
+  此过程在宿主机上进行，提供与ll-builder类似的环境，绕过ll-builder，避免不必要的ostree提交和磁盘复制。
+  
+  此构建模式提供以下内容：
+  
+  ## 环境变量
+  LINGLONG_APPID="{APPID}"
+  PREFIX="/opt/apps/{APPID}/files"
+  TRIPLET="x86_64-linux-gnu|aarch64-linux-gnu|loongarch64-linux-gnu|..." 
+  KILLER_PACKER=1
  
- 此构建模式提供以下内容：
+  ## 目录
+  /project: 项目目录
+  /: 与宿主机相同
  
- ## 环境变量
- LINGLONG_APPID="{APPID}"
- PREFIX="/opt/apps/{APPID}/files"
- TRIPLET="x86_64-linux-gnu|aarch64-linux-gnu|loongarch64-linux-gnu|..." 
- KILLER_PACKER=1
-
- ## 目录
- /project: 项目目录
- /: 与宿主机相同
-
- ## 后处理
- * 为快捷方式和服务单元添加ll-cli run前缀
-
- * KILLER_PACKER 标识当前处于killer环境，killer环境下setup.sh会自动跳过符号链接修复，
-   可以在启动前设置KILLER_PACKER=0禁用该行为。
- `
+  ## 后处理
+  * 为快捷方式和服务单元添加ll-cli run前缀
+ 
+  * KILLER_PACKER 标识当前处于killer环境，killer环境下setup.sh会自动跳过符号链接修复，
+	可以在启动前设置KILLER_PACKER=0禁用该行为。
+  `
 const BuildCommandHelp = ``
 const PostSetupScript = "build-aux/post-setup.sh"
 const WorkDir = "linglong/output"
@@ -162,13 +162,77 @@ func SetupFilesystem() {
 
 	// 挂载宿主机根目录到rootfsPath（只读）
 	if err := utils.Mount(&utils.MountOption{Source: Flag.RootFs, Target: rootfsPath, FSType: "merge", Flags: unix.MS_RDONLY}); err != nil {
-		utils.ExitWith(err, "挂载宿主机根目录失败")
+		utils.ExitWith(err, "挂载根目录失败")
+	}
+	if Flag.RootFs != "/" {
+		if err := utils.MountAll([]utils.MountOption{
+			{
+				Source: "/dev",
+				Target: path.Join(rootfsPath, "dev"),
+			},
+			{
+				Source: "/proc",
+				Target: path.Join(rootfsPath, "proc"),
+			},
+			{
+				Source: "/home",
+				Target: path.Join(rootfsPath, "home"),
+			},
+			{
+				Source: "/root",
+				Target: path.Join(rootfsPath, "root"),
+			},
+			{
+				Source: "/tmp",
+				Target: path.Join(rootfsPath, "tmp"),
+			},
+			{
+				Source: "/sys",
+				Target: path.Join(rootfsPath, "sys"),
+			}}); err != nil {
+			utils.ExitWith(err, "挂载主机文件系统失败")
+		}
 	}
 
-	// 创建并挂载/run/host/rootfs
-	runTmpfs := path.Join(rootfsPath, "run")
-	if err := utils.Mount(&utils.MountOption{Source: "tmpfs", Target: runTmpfs, FSType: "tmpfs"}); err != nil {
-		utils.ExitWith(err, "挂载run目录失败")
+	if err := utils.MountAll([]utils.MountOption{
+		{
+			Source: "/etc/resolv.conf",
+			Target: path.Join(rootfsPath, "etc/resolv.conf"),
+		},
+		{
+			Source: "/etc/localtime",
+			Target: path.Join(rootfsPath, "etc/localtime"),
+		},
+		{
+			Source: "/etc/timezone",
+			Target: path.Join(rootfsPath, "etc/timezone"),
+		},
+		{
+			Source: "/etc/machine-id",
+			Target: path.Join(rootfsPath, "etc/machine-id"),
+		}}); err != nil {
+		utils.ExitWith(err, "挂载主机配置文件失败")
+	}
+
+	if err := utils.MountAll([]utils.MountOption{
+		{
+			Source: "tmpfs",
+			Target: path.Join(rootfsPath, "run"),
+			FSType: "tmpfs",
+		},
+		{
+			Source: ".",
+			Target: path.Join(rootfsPath, "project"),
+		},
+		{
+			Source: config.AptDataDir,
+			Target: path.Join(rootfsPath, "/var/lib/apt"),
+		},
+		{
+			Source: config.AptCacheDir,
+			Target: path.Join(rootfsPath, "/var/cache"),
+		}}); err != nil {
+		utils.ExitWith(err, "挂载项目系统失败")
 	}
 
 	if Flag.Runtime != "" {
@@ -177,20 +241,11 @@ func SetupFilesystem() {
 			utils.ExitWith(err, "挂载runtime目录失败")
 		}
 	}
+
 	// 创建并挂载/run/host/rootfs
 	runHostRootfs := path.Join(rootfsPath, "run/host/rootfs")
 	if err := os.MkdirAll(runHostRootfs, 0755); err != nil {
 		utils.ExitWith(err, "创建run/host/rootfs目录失败")
-	}
-
-	// 挂载当前目录到/project
-	projectDir := path.Join(rootfsPath, "project")
-	if err := os.MkdirAll(projectDir, 0755); err != nil {
-		utils.ExitWith(err, "创建/project目录失败")
-	}
-
-	if err := utils.MountBind(".", projectDir, syscall.MS_BIND); err != nil {
-		utils.ExitWith(err, "挂载项目目录失败")
 	}
 
 	// 创建并挂载输出目录
