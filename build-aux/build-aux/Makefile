@@ -118,12 +118,8 @@ $(CONFIG_TARGET):
 	@echo "KILLER_EXEC ?= $(KILLER_EXEC)" >> $(CONFIG_TARGET)
 	@echo "CREATE_ARGS ?= $(CREATE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "BUILD_ARGS ?= $(BUILD_ARGS)" >> $(CONFIG_TARGET)
-	@echo "OSTREE_MAKE_ARGS ?= $(OSTREE_MAKE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_LDD_CHECK ?= $(ENABLE_LDD_CHECK)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_INSTALL ?= $(ENABLE_INSTALL)" >> $(CONFIG_TARGET)
-	@echo "ENABLE_OSTREE ?= $(ENABLE_OSTREE)" >> $(CONFIG_TARGET)
-	@echo "OSTREE_BASE ?= $(OSTREE_BASE)" >> $(CONFIG_TARGET)
-	@echo "OSTREE_RUNTIME ?= $(OSTREE_RUNTIME)" >> $(CONFIG_TARGET)
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
@@ -201,6 +197,9 @@ $(LAYER_NAME): $(LAYER_DEP) $(EXTRA_POST_BUILD_TARGET) $(BUILD_AUX_DEPS)
 	@echo "[导出layer文件]"
 	$(KILLER) layer build -o $(LAYER_NAME)
 
+build: $(YAML_CONFIG) $(EXTRA_DEPS) $(EXTRA_BUILD_TARGET)
+	@$(KILLER) build $(KILLER_BUILD_ARGS) --ptrace -- bash
+
 clean-apt:
 	rm -rf linglong/apt
 clean-fs:
@@ -235,6 +234,7 @@ help:
 	@echo "    all           构建layer文件（默认目标）"
 	@echo "    config        生成或更新配置文件 $(CONFIG_TARGET)"
 	@echo "    init          初始化项目并创建 $(YAML_CONFIG)"
+	@echo "    build         进入当前配置下的构建环境"
 	@echo "    update        更新APT软件源缓存"
 	@echo "    install       安装主包和额外依赖到构建环境"
 	@echo "    layer         构建layer文件"
@@ -305,5 +305,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
+.PHONY: all build config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
