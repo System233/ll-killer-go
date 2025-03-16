@@ -127,7 +127,7 @@ $(CONFIG_TARGET):
 
 $(SOURCES_LIST):
 	@echo "[从主机复制sources.list]"
-	cp /etc/apt/sources.list $(SOURCES_LIST)
+	cat $$(find /etc/apt/sources.list /etc/apt/sources.list.d -type f) > $(SOURCES_LIST)
 
 $(UPDATE_TARGET): $(SOURCES_LIST)
 	@echo "[更新APT缓存]"
