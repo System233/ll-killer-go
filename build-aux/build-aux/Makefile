@@ -195,19 +195,11 @@ clean-apt:
 	rm -rf linglong/apt
 clean-fs:
 	rm -rf linglong/filesystem
-clean-test:
-	rm -rf tests
 clean-ll:
-	rm -rf linglong/output
 	ll-builder list|grep ":$(APPID)/"|xargs -r ll-builder remove || true
-clean-log:
-	rm -rf *.log 
-clean-layer:
-	rm -rf *.layer
-clean: clean-ll clean-fs clean-test clean-log clean-layer
-clean-mk:
-	rm -rf $(CONFIG_TARGET)
-clean-all: clean clean-apt
+clean: clean-fs
+	rm -rf *.log *.layer linglong/output tests
+clean-all: clean clean-apt clean-ll clean-mk $(CONFIG_TARGET)
 
 test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
@@ -229,15 +221,12 @@ help:
 	@echo "    update        更新APT软件源缓存"
 	@echo "    install       安装主包和额外依赖到构建环境"
 	@echo "    layer         构建layer文件"
-	@echo "    clean         清除所有生成的文件、测试输出和layer"
+	@echo "    clean         清除生成的文件、测试输出和layer"
 	@echo "    clean-apt     清除APT相关缓存文件"
 	@echo "    clean-fs      清除构建文件系统内容"
-	@echo "    clean-ll      清除玲珑构建输出"
-	@echo "    clean-layer   清除layer文件"
-	@echo "    clean-log     清除log文件"
-	@echo "    clean-test    清除tests文件"
-	@echo "    clean-mk      清除$(CONFIG_TARGET)配置文件"
-	@echo "    clean-all     执行clean并清除clean-apt"
+	@echo "    clean-ll      清除玲珑构建缓存"
+	@echo "                  注意：若未启用OSTREE，清除后无法进入构建环境，请重新运行ll-builder build -- true初始化"
+	@echo "    clean-all     清除生成的所有内容"
 	@echo "    test          执行自动化测试"
 	@echo "    help          显示本帮助信息"
 	@echo ""
@@ -297,5 +286,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all build config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
+.PHONY: all build config init update install layer layer-dynamic clean clean-all clean-apt clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
