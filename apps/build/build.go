@@ -25,6 +25,8 @@ import (
 
 var BuildFlag struct {
 	RootFS            string
+	Runtime           string
+	HostFS            string
 	TmpRootFS         string
 	CWD               string
 	Strict            bool
@@ -55,8 +57,16 @@ func GetBuildArgs() []string {
 		fmt.Sprint("--no-builder=", BuildFlag.NoBuilder),
 	}
 
+	if BuildFlag.HostFS != "" {
+		args = append(args, "--hostfs", BuildFlag.HostFS)
+	}
+
 	if BuildFlag.RootFS != "" {
 		args = append(args, "--rootfs", BuildFlag.RootFS)
+	}
+
+	if BuildFlag.Runtime != "" {
+		args = append(args, "--runtime", BuildFlag.Runtime)
 	}
 
 	if BuildFlag.CWD != "" {
@@ -91,7 +101,7 @@ func MountOverlayStage2() error {
 	overlayDir := path.Join(BuildFlag.CWD, config.FileSystemDir)
 	mergedDir := path.Join(overlayDir, "merged")
 	tmpRootFS := BuildFlag.TmpRootFS
-	err := syscall.PivotRoot(tmpRootFS+mergedDir, tmpRootFS+mergedDir+BuildFlag.RootFS)
+	err := syscall.PivotRoot(tmpRootFS+mergedDir, tmpRootFS+mergedDir+BuildFlag.HostFS)
 	if err != nil {
 		return fmt.Errorf("PivotRoot2:%v", err)
 	}
@@ -111,7 +121,7 @@ func MountOverlay() error {
 	lowerDir := path.Join(overlayDir, config.LowerDirName)
 	workDir := path.Join(overlayDir, config.WorkDirName)
 	mergedDir := path.Join(overlayDir, config.MergedDirName)
-	cwdRootFSPivoted := fmt.Sprint(BuildFlag.RootFS, tmpRootFS)
+	cwdRootFSPivoted := fmt.Sprint(BuildFlag.HostFS, tmpRootFS)
 	err := utils.MkdirAlls([]string{
 		tmpRootFS, upperDir, lowerDir, workDir,
 		mergedDir,
@@ -121,7 +131,7 @@ func MountOverlay() error {
 	if err != nil {
 		return err
 	}
-	err = utils.MountBind(BuildFlag.RootFS, BuildFlag.RootFS, 0)
+	err = utils.MountBind(BuildFlag.HostFS, BuildFlag.HostFS, 0)
 	if err != nil {
 		return err
 	}
@@ -156,7 +166,7 @@ func MountOverlay() error {
 	if err != nil {
 		return fmt.Errorf("挂载目录失败:%v", err)
 	}
-	err = syscall.PivotRoot(BuildFlag.RootFS, cwdRootFSPivoted)
+	err = syscall.PivotRoot(BuildFlag.HostFS, cwdRootFSPivoted)
 	if err != nil {
 		return fmt.Errorf("切换根目录失败:%v", err)
 	}
@@ -230,61 +240,72 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	reexec.Register("MountOverlay", MountOverlay)
 	reexec.Register("MountOverlayStage2", MountOverlayStage2)
 	ok, err := reexec.Init()
-	if err != nil {
+	if ok || err != nil {
 		return err
 	}
-	if !ok {
-		if BuildFlag.EncodedArgs != "" {
-			args := []string{}
-			for _, item := range strings.Split(BuildFlag.EncodedArgs, ",") {
-				value, err := base64.StdEncoding.DecodeString(item)
-				if err != nil {
-					return err
-				}
-				args = append(args, string(value))
+	if BuildFlag.EncodedArgs != "" {
+		args := []string{}
+		for _, item := range strings.Split(BuildFlag.EncodedArgs, ",") {
+			value, err := base64.StdEncoding.DecodeString(item)
+			if err != nil {
+				return err
 			}
-
-			args = append([]string{"build"}, args...)
-			return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
-				UID:           0,
-				GID:           0,
-				Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
-				Args:          args,
-				NoDefaultArgs: true,
-			})
-		} else if BuildFlag.NoBuilder {
-			args := GetBuildArgs()
-			args = append([]string{"build"}, args...)
-			if os.Getuid() == 0 && os.Getgid() == 0 {
-				return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
-					Cloneflags:    syscall.CLONE_NEWNS,
-					Args:          args,
-					NoDefaultArgs: true,
-				})
-			}
-			return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
-				UID:           0,
-				GID:           0,
-				Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
-				Args:          args,
-				NoDefaultArgs: true,
-			})
-		} else {
-			encodedArgs := []string{}
-			target := "run"
-			if !BuildFlag.Strict {
-				target = "build"
-			}
-			args := GetBuildArgs()
-			for _, str := range args {
-				encoded := base64.StdEncoding.EncodeToString([]byte(str))
-				encodedArgs = append(encodedArgs, encoded)
-			}
-			extArgs := []string{"ll-builder", target, "--exec", fmt.Sprintf("%s build --encoded-args %s", BuildFlag.Self, strings.Join(encodedArgs, ","))}
-			utils.Exec(extArgs...)
+			args = append(args, string(value))
 		}
+
+		args = append([]string{"build"}, args...)
+		return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
+			UID:           0,
+			GID:           0,
+			Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+			Args:          args,
+			NoDefaultArgs: true,
+		})
+	} else if BuildFlag.NoBuilder {
+		args := GetBuildArgs()
+		args = append([]string{"build"}, args...)
+		if os.Getuid() == 0 && os.Getgid() == 0 {
+			return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
+				Cloneflags:    syscall.CLONE_NEWNS,
+				Args:          args,
+				NoDefaultArgs: true,
+			})
+		}
+		return utils.SwitchTo("MountOverlay", &utils.SwitchFlags{
+			UID:           0,
+			GID:           0,
+			Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+			Args:          args,
+			NoDefaultArgs: true,
+		})
+	} else if BuildFlag.RootFS != "" {
+		BuildFlag.NoBuilder = true
+		args := GetBuildArgs()
+		args = append([]string{
+			reexec.Self(),
+			"layer",
+			"exec",
+			"--rootfs", BuildFlag.RootFS,
+			"--runtime", BuildFlag.Runtime,
+			"--",
+			BuildFlag.Self,
+			"build",
+		}, args...)
+		return utils.ExecRaw(args...)
+	} else {
+		encodedArgs := []string{}
+		target := "run"
+		if !BuildFlag.Strict {
+			target = "build"
+		}
+		args := GetBuildArgs()
+		for _, str := range args {
+			encoded := base64.StdEncoding.EncodeToString([]byte(str))
+			encodedArgs = append(encodedArgs, encoded)
+		}
+		extArgs := []string{"ll-builder", target, "--exec", fmt.Sprintf("%s build --encoded-args %s", BuildFlag.Self, strings.Join(encodedArgs, ","))}
+		return utils.ExecRaw(extArgs...)
 	}
-	return nil
 }
 
 func CreateBuildCommand() *cobra.Command {
@@ -306,7 +327,10 @@ func CreateBuildCommand() *cobra.Command {
 			utils.ExitWith(BuildMain(cmd, args))
 		},
 	}
-	cmd.Flags().StringVar(&BuildFlag.RootFS, "rootfs", "/run/host/rootfs", "主机根目录路径")
+
+	cmd.Flags().StringVar(&BuildFlag.RootFS, "rootfs", "", "根文件系统")
+	cmd.Flags().StringVar(&BuildFlag.Runtime, "runtime", "", "runtime文件系统")
+	cmd.Flags().StringVar(&BuildFlag.HostFS, "hostfs", "/run/host/rootfs", "主机根目录路径")
 	cmd.Flags().StringVar(&BuildFlag.TmpRootFS, "tmp-rootfs", "/tmp/rootfs", "临时根目录路径")
 	cmd.Flags().StringVar(&BuildFlag.CWD, "cwd", cwd, "当前工作目录路径")
 	if _ptrace.IsSupported {

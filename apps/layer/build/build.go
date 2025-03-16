@@ -16,13 +16,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/System233/ll-killer-go/apps/layer/fs"
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/layer"
 	"github.com/System233/ll-killer-go/utils"
 
 	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/unix"
 )
 
 var Flag struct {
@@ -35,8 +35,9 @@ var Flag struct {
 	Gid            int
 	Uid            int
 	NoPostSetup    bool
-	PrintLayerName bool
 	PrintJson      bool
+	PrintLayerName bool
+	Quiet          bool
 	Print          string
 	NoLayer        bool
 	PackArgs       []string
@@ -140,155 +141,6 @@ func PostPackUp(workDir string) {
 	}), "生成layer失败")
 }
 
-func SetupFilesystem() {
-	err := utils.LoadYamlFile(config.LinglongYaml, &Config)
-	if err != nil {
-		utils.ExitWith(err)
-	}
-
-	utils.Must(LayerInfo.ParseLayerInfo(Config), "解析yaml错误")
-	LayerInfo.Print()
-
-	if utils.IsExist(WorkDir) {
-		utils.Must(os.RemoveAll(WorkDir), "无法移除"+WorkDir)
-	}
-	if err := os.MkdirAll(WorkDir, 0755); err != nil {
-		utils.ExitWith(err)
-	}
-
-	configID := Config.Package.ID
-	configBuild := Config.Build
-	rootfsPath := path.Join(WorkDir, "rootfs")
-
-	// 挂载宿主机根目录到rootfsPath（只读）
-	if err := utils.Mount(&utils.MountOption{Source: Flag.RootFs, Target: rootfsPath, FSType: "merge", Flags: unix.MS_RDONLY}); err != nil {
-		utils.ExitWith(err, "挂载根目录失败")
-	}
-	if Flag.RootFs != "/" {
-		if err := utils.MountAll([]utils.MountOption{
-			{
-				Source: "/dev",
-				Target: path.Join(rootfsPath, "dev"),
-			},
-			{
-				Source: "/proc",
-				Target: path.Join(rootfsPath, "proc"),
-			},
-			{
-				Source: "/home",
-				Target: path.Join(rootfsPath, "home"),
-			},
-			{
-				Source: "/root",
-				Target: path.Join(rootfsPath, "root"),
-			},
-			{
-				Source: "/tmp",
-				Target: path.Join(rootfsPath, "tmp"),
-			},
-			{
-				Source: "/sys",
-				Target: path.Join(rootfsPath, "sys"),
-			}}); err != nil {
-			utils.ExitWith(err, "挂载主机文件系统失败")
-		}
-	}
-
-	if err := utils.MountAll([]utils.MountOption{
-		{
-			Source: "/etc/resolv.conf",
-			Target: path.Join(rootfsPath, "etc/resolv.conf"),
-		},
-		{
-			Source: "/etc/localtime",
-			Target: path.Join(rootfsPath, "etc/localtime"),
-		},
-		{
-			Source: "/etc/timezone",
-			Target: path.Join(rootfsPath, "etc/timezone"),
-		},
-		{
-			Source: "/etc/machine-id",
-			Target: path.Join(rootfsPath, "etc/machine-id"),
-		}}); err != nil {
-		utils.ExitWith(err, "挂载主机配置文件失败")
-	}
-
-	if err := utils.MountAll([]utils.MountOption{
-		{
-			Source: "tmpfs",
-			Target: path.Join(rootfsPath, "run"),
-			FSType: "tmpfs",
-		},
-		{
-			Source: ".",
-			Target: path.Join(rootfsPath, "project"),
-		},
-		{
-			Source: config.AptDataDir,
-			Target: path.Join(rootfsPath, "/var/lib/apt"),
-		},
-		{
-			Source: config.AptCacheDir,
-			Target: path.Join(rootfsPath, "/var/cache"),
-		}}); err != nil {
-		utils.ExitWith(err, "挂载项目系统失败")
-	}
-
-	if Flag.Runtime != "" {
-		runtimeFS := path.Join(rootfsPath, "runtime")
-		if err := utils.Mount(&utils.MountOption{Source: Flag.Runtime, Target: runtimeFS}); err != nil {
-			utils.ExitWith(err, "挂载runtime目录失败")
-		}
-	}
-
-	// 创建并挂载/run/host/rootfs
-	runHostRootfs := path.Join(rootfsPath, "run/host/rootfs")
-	if err := os.MkdirAll(runHostRootfs, 0755); err != nil {
-		utils.ExitWith(err, "创建run/host/rootfs目录失败")
-	}
-
-	// 创建并挂载输出目录
-	buildHostDir := path.Join(WorkDir, "build")
-	if err := os.MkdirAll(buildHostDir, 0755); err != nil {
-		utils.ExitWith(err, "创建输出目录失败")
-	}
-
-	// 创建并挂载/run/host/rootfs
-	optTmpfs := path.Join(rootfsPath, "opt")
-	if err := utils.Mount(&utils.MountOption{Source: "tmpfs", Target: optTmpfs, FSType: "tmpfs"}); err != nil {
-		utils.ExitWith(err, "挂载opt目录失败")
-	}
-	optAppsDir := path.Join(rootfsPath, "opt/apps", configID, "files")
-	if err := os.MkdirAll(optAppsDir, 0755); err != nil {
-		utils.ExitWith(err, "创建/opt/apps目录失败")
-	}
-	if err := utils.MountBind(buildHostDir, optAppsDir, syscall.MS_BIND); err != nil {
-		utils.ExitWith(err, "挂载输出目录失败")
-	}
-
-	// 写入entry.sh
-	entryPath := "linglong/entry.sh"
-	entryData := []byte(fmt.Sprintf("#!/bin/bash\n%s", configBuild))
-	if err := os.WriteFile(entryPath, entryData, 0755); err != nil {
-		utils.ExitWith(err, "写入entry.sh失败")
-	}
-
-	// PivotRoot
-	if err := utils.MountBind(rootfsPath, rootfsPath, 0); err != nil {
-		utils.ExitWith(err, "绑定根目录失败")
-	}
-
-	if err := syscall.PivotRoot(rootfsPath, runHostRootfs); err != nil {
-		utils.ExitWith(err, "切换根目录失败")
-	}
-
-	// 配置环境变量
-	os.Setenv("LINGLONG_APPID", configID)
-	os.Setenv("PREFIX", path.Join("/opt/apps", configID, "files"))
-	os.Setenv("TRIPLET", layer.GetTriplet())
-
-}
 func RunBuildScript(workDir string) {
 	if len(Flag.Args) == 0 {
 		Flag.Args = append(Flag.Args, "linglong/entry.sh")
@@ -308,18 +160,21 @@ func RunPostSetup(workDir string) {
 		utils.ExitWith(err, "后处理失败")
 	}
 }
-func PostFilesystem() {
-	runHostRootfs := "/run/host/rootfs"
-	rootfsPath := path.Join(WorkDir, "rootfs")
-	utils.Must(unix.PivotRoot(runHostRootfs, rootfsPath), "切换回主机失败")
-}
+
 func BuildLayer() {
 	killerPackerEnv := os.Getenv(config.KillerPackerEnv)
 	if killerPackerEnv == "" {
 		os.Setenv(config.KillerPackerEnv, "1")
 	}
 	log.Println("[准备构建环境]")
-	SetupFilesystem()
+
+	fs.SetupFilesystem(fs.SetupFilesystemOption{
+		RootFs:    Flag.RootFs,
+		Runtime:   Flag.Runtime,
+		Quiet:     Flag.Quiet,
+		Config:    &Config,
+		LayerInfo: &LayerInfo,
+	})
 
 	log.Println("[运行构建脚本]")
 	RunBuildScript(WorkDir)
@@ -328,7 +183,7 @@ func BuildLayer() {
 		log.Println("[文件后处理]")
 		RunPostSetup(WorkDir)
 	}
-	PostFilesystem()
+	fs.PostFilesystem()
 
 	if !Flag.NoLayer {
 		log.Println("[打包输出]")
@@ -440,6 +295,7 @@ func CreateBuildCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&Flag.PrintLayerName, "print-layer-name", false, "输出构建的layer文件名")
 	cmd.Flags().StringVar(&Flag.Print, "print", "", "输出应用参数后退出")
 	cmd.Flags().BoolVar(&Flag.PrintJson, "json", false, "输出应用参数的JSON格式后退出")
+	cmd.Flags().BoolVar(&Flag.Quiet, "quiet", false, "安静模式，构建前不输出项目信息")
 	cmd.Flags().StringVarP(&Flag.Target, "output", "o", "", "输出的layer文件名")
 	cmd.Flags().StringSliceVar(&Flag.PackArgs, "erofs-args", []string{}, "其他mkfs.erofs选项,逗号分隔")
 	cmd.Flags().SortFlags = false

@@ -9,6 +9,9 @@ package reexec
 import (
 	"fmt"
 	"os"
+	"os/exec"
+
+	"github.com/moby/sys/reexec"
 )
 
 var registeredInitializers = make(map[string]func() error)
@@ -26,4 +29,10 @@ func Init() (bool, error) {
 		return true, initializer()
 	}
 	return false, nil
+}
+func Command(args ...string) *exec.Cmd {
+	return reexec.Command(args...)
+}
+func Self() string {
+	return reexec.Self()
 }

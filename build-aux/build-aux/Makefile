@@ -16,6 +16,7 @@ BUILD_ARGS ?=
 CREATE_ARGS ?=
 ENABLE_LDD_CHECK ?= 1
 ENABLE_INSTALL ?=1
+ENABLE_OSTREE ?=0
 LDD_CHECK_MODE ?= fast
 
 SOURCES_LIST = sources.list
@@ -39,10 +40,39 @@ BUILD_AUX_DEPS := build-aux/*
 APPEND_LOG = 2>&1 | tee $@~
 MOVE_LOG = @mv -f $@~ $@
 
+
 ifeq ($(wildcard $(YAML_CONFIG)),$(YAML_CONFIG))
 	LAYER_NAME := $(shell $(KILLER) layer build --print-layer-name)
 else
 	LAYER_NAME := $(APPID).layer
+endif
+
+
+OSTREE_MAKE = $(MAKE) --no-print-directory -f build-aux/ostree.mk YAML=$(YAML_CONFIG)
+OSTREE_BASE:=base.mk
+OSTREE_RUNTIME:=runtime.mk
+
+ifeq ($(ENABLE_OSTREE),1)
+	APP_BASE_DIR ?=
+	APP_RUNTIME_DIR ?=
+	APP_BASE=$(shell $(KILLER) layer build --print base)
+	APP_RUNTIME=$(shell $(KILLER) layer build --print runtime)
+	APP_MODULE=$(shell $(KILLER) layer build --print module)
+
+	OSTREE_MAKE_BASE = $(OSTREE_MAKE) TARGET=$(OSTREE_BASE) ID=$(APP_BASE) MODLUE=$(APP_MODULE)
+	OSTREE_MAKE_RUNTIME = $(OSTREE_MAKE) TARGET=$(OSTREE_RUNTIME) ID=$(APP_RUNTIME) MODLUE=$(APP_MODULE)
+
+	APP_BASE_DIR=$(shell $(OSTREE_MAKE_BASE) show)
+	APP_RUNTIME_DIR=$(shell $(OSTREE_MAKE_RUNTIME) show)
+
+	OVERLAY_ROOT=$(PWD)/linglong/filesystem/
+	OVERLAY_MERGED=$(OVERLAY_ROOT)/merged
+	OVERLAY_DIFF=$(OVERLAY_ROOT)/diff
+	OVERLAY_OVERWRITE=$(OVERLAY_ROOT)/overwrite
+	OVERLAY_WORK=$(OVERLAY_ROOT)/work
+
+	OSTREE_CREATE_ARGS = --no-build
+	OSTREE_BUILD_ARGS = --rootfs "$(APP_BASE_DIR)" --runtime "$(APP_RUNTIME_DIR)"
 endif
 
 ifeq ($(wildcard $(EXTRA_BUILD)),)
@@ -69,13 +99,13 @@ else
 	LAYER_DEP := $(INSTALL_DEP)
 endif
 
-export KILLER_BUILD_ARGS := $(BUILD_ARGS)
-export KILLER_CREATE_ARGS := $(CREATE_ARGS)
+KILLER_BUILD_ARGS = $(BUILD_ARGS) $(OSTREE_BUILD_ARGS)
+KILLER_CREATE_ARGS = $(CREATE_ARGS) $(OSTREE_CREATE_ARGS)
 
 $(CONFIG_TARGET):
 	@echo "PKG ?= $(PKG)" > $(CONFIG_TARGET)
 	@echo "APPID ?= $(APPID)" >> $(CONFIG_TARGET)
-	@echo "KILLER ?= $(KILLER)" >> $(CONFIG_TARGET)
+	@echo "KILLER_EXEC ?= $(KILLER_EXEC)" >> $(CONFIG_TARGET)
 	@echo "CREATE_ARGS ?= $(CREATE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "BUILD_ARGS ?= $(BUILD_ARGS)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_LDD_CHECK ?= $(ENABLE_LDD_CHECK)" >> $(CONFIG_TARGET)
@@ -117,26 +147,26 @@ $(EXTRA_DEPS):
 
 $(YAML_CONFIG): $(PKG_INFO)
 	@echo "[创建玲珑项目]"
-	$(KILLER) create --from $(PKG_INFO) --id $(APPID) $(CREATE_ARGS) 
+	$(KILLER) create --from $(PKG_INFO) --id $(APPID) $(KILLER_CREATE_ARGS) 
 
 $(BUILD_TARGET): $(YAML_CONFIG) $(EXTRA_BUILD)
 	@echo "[执行自定义构建]"
-	$(KILLER) build $(BUILD_ARGS) --ptrace -- $(EXTRA_BUILD) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) --ptrace -- $(EXTRA_BUILD) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(INSTALL_TARGET): $(YAML_CONFIG) $(EXTRA_DEPS) $(EXTRA_BUILD_TARGET)
 	@echo "[将包安装至构建环境]"
-	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(PKG) $(shell cat $(EXTRA_DEPS)) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) --ptrace -- apt install -y $(PKG) $(shell cat $(EXTRA_DEPS)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(POST_BUILD_TARGET): $(INSTALL_DEP) $(EXTRA_POST_BUILD)
 	@echo "[执行自定义后构建]"
-	$(KILLER) build $(BUILD_ARGS) --ptrace -- $(EXTRA_POST_BUILD) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) --ptrace -- $(EXTRA_POST_BUILD) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(LDD_CHECK_TARGET):  $(INSTALL_DEP) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
-	$(KILLER) build $(BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
 	$(MOVE_LOG)
 
 .INTERMEDIATE: ldd_search
@@ -150,7 +180,7 @@ ldd_search: $(LDD_CHECK_TARGET) build-aux/ldd-search.sh
 
 $(LDD_INSTALL_TARGET): $(LDD_FOUND_TARGET)
 	@echo "[安装找到的缺失库]"
-	$(KILLER) build $(BUILD_ARGS) --ptrace -- apt install -y $(shell cat $(LDD_FOUND_TARGET)) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) --ptrace -- apt install -y $(shell cat $(LDD_FOUND_TARGET)) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(LAYER_NAME): $(LAYER_DEP) $(EXTRA_POST_BUILD_TARGET) $(BUILD_AUX_DEPS)
@@ -212,6 +242,7 @@ help:
 	@echo "    KILLER=ll-killer         ll-killer工具路径 ($(KILLER))"
 	@echo "    ENABLE_LDD_CHECK=0|1     是否启用依赖检查 ($(ENABLE_LDD_CHECK))"
 	@echo "    ENABLE_INSTALL=0|1       是否启用自动安装依赖 ($(ENABLE_INSTALL))"
+	@echo "    ENABLE_OSTREE=0|1        是否启用自定义ostree仓库，彻底移除ll-builder依赖 ($(ENABLE_OSTREE))"
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
@@ -259,49 +290,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all build-env config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
+.PHONY: all config clean-mk init update install layer layer-dynamic clean clean-all clean-apt clean-test clean-log clean-layer clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
-
-OSTREE_MAKE = $(MAKE) -f build-aux/ostree.mk 
-OSTREE_CONFIG:=ost.mk
-OSTREE_BASE:=base.mk
-OSTREE_RUNTIME:=runtime.mk
-
-APP_BASE_DIR ?=
-APP_RUNTIME_DIR ?=
-APP_BASE=$(shell $(KILLER) layer build --print base)
-APP_RUNTIME=$(shell $(KILLER) layer build --print runtime)
-APP_MODULE=$(shell $(KILLER) layer build --print module)
-
-OSTREE_MAKE_BASE = $(OSTREE_MAKE) TARGET=$(OSTREE_BASE) ID=$(APP_BASE) MODLUE=$(APP_MODULE)
-OSTREE_MAKE_RUNTIME = $(OSTREE_MAKE) TARGET=$(OSTREE_RUNTIME) ID=$(APP_RUNTIME) MODLUE=$(APP_MODULE)
-
-APP_BASE_DIR=$(shell $(OSTREE_MAKE_BASE) show)
-APP_RUNTIME_DIR=$(shell $(OSTREE_MAKE_RUNTIME) show)
-
-$(OSTREE_BASE): $(YAML_CONFIG)
-	$(OSTREE_MAKE_BASE)
-$(OSTREE_RUNTIME): $(YAML_CONFIG)
-	$(OSTREE_MAKE_RUNTIME)
-
-$(OSTREE_CONFIG): $(OSTREE_BASE) $(YAML_CONFIG) 
-	@echo "APP_BASE_DIR=$(APP_BASE_DIR)" >$@
-	@echo "APP_RUNTIME_DIR=$(APP_RUNTIME_DIR)" >>$@
-
-OVERLAY_ROOT=$(PWD)/linglong/filesystem/
-OVERLAY_MERGED=$(OVERLAY_ROOT)/merged
-OVERLAY_DIFF=$(OVERLAY_ROOT)/diff
-OVERLAY_OVERWRITE=$(OVERLAY_ROOT)/overwrite
-OVERLAY_WORK=$(OVERLAY_ROOT)/work
-build-env:
-	@ll-killer exec \
-	--mount overlay:$(OVERLAY_MERGED)::overlay:lowerdir=$(OVERLAY_OVERWRITE):$(APP_BASE_DIR)/files,upperdir=$(OVERLAY_DIFF),workdir=$(OVERLAY_WORK) \
-	--mount "$(OSTREE_MAKE_RUNTIME):$(OVERLAY_MERGED)/runtime" \
-	--mount "/etc/resolv.conf:$(OVERLAY_MERGED)/etc/resolv.conf" \
-	--mount "/etc/localtime:$(OVERLAY_MERGED)/etc/localtime" \
-	--mount "/etc/timezone:$(OVERLAY_MERGED)/etc/timezone" \
-	--mount "/etc/machine-id:$(OVERLAY_MERGED)/etc/machine-id" \
-	--mount "/:$(OVERLAY_MERGED)/run/host/rootfs" \
-	--rootfs $(OVERLAY_MERGED) \
-	--root \
-	-- bash

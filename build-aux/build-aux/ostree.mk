@@ -6,6 +6,7 @@ OSTREE_NAME ?= stable
 OSTREE_REMOTE ?= https://mirror-repo-linglong.deepin.com/repos/stable
 OSTREE=ostree --repo=$(OSTREE_ROOT)
 
+YAML ?= linglong.yaml
 ID ?= 
 MODULE ?= binary
 ifneq ($(ID),)
@@ -14,6 +15,7 @@ ifneq ($(ID),)
 	REF_REMOTE_NAME ?= $(shell $(OSTREE) remote refs $(OSTREE_NAME)|grep "$(REF_FILTER)"|tail -n1)
 	REF_NAME ?= $(shell echo "$(REF_REMOTE_NAME)"|cut -d: -f2)
 	OSTREE_TARGET ?= $(OSTREE_ROOT)/layers/$(REF_NAME)
+	OSTREE_TARGET_FILES ?= $(OSTREE_TARGET)/files
 else
 	TARGET=
 endif
@@ -23,11 +25,12 @@ $(OSTREE_ROOT):
 	$(OSTREE) init --mode=bare-user-only 
 	$(OSTREE) remote add $(OSTREE_NAME) $(OSTREE_REMOTE) --no-gpg-verify 
 
-$(OSTREE_TARGET):
+$(OSTREE_TARGET_FILES): $(YAML)
 	echo REF=$(REF) 
 	mkdir -p $(OSTREE_TARGET)
 	rm -d $(OSTREE_TARGET)
 	$(OSTREE) checkout $(REF_REMOTE_NAME) $(OSTREE_TARGET)
+	test -d $(OSTREE_TARGET_FILES)
 
 $(TARGET): $(OSTREE_TARGET)
 	@echo "REF ?= $(REF)" >$@
@@ -43,7 +46,7 @@ clean:
 	rm -rf $(OSTREE_TARGET)
 
 show: $(TARGET)
-	@echo $(OSTREE_TARGET)
+	@echo $(OSTREE_TARGET_FILES)
 
 all: $(TARGET)
 
