@@ -48,9 +48,16 @@ else
 endif
 
 
-OSTREE_MAKE = $(MAKE) --no-print-directory -f build-aux/ostree.mk YAML=$(YAML_CONFIG)
-OSTREE_BASE:=base.mk
-OSTREE_RUNTIME:=runtime.mk
+ifeq ($(wildcard $(EXTRA_BUILD)),)
+    EXTRA_BUILD_TARGET =
+else
+    EXTRA_BUILD_TARGET = $(BUILD_TARGET)
+endif
+
+OSTREE_MAKE_ARGS ?=
+OSTREE_MAKE = $(MAKE) --no-print-directory -f build-aux/ostree.mk $(OSTREE_MAKE_ARGS)
+OSTREE_BASE ?= base.mk
+OSTREE_RUNTIME ?= runtime.mk
 
 ifeq ($(ENABLE_OSTREE),1)
 	APP_BASE_DIR ?=
@@ -73,13 +80,16 @@ ifeq ($(ENABLE_OSTREE),1)
 
 	OSTREE_CREATE_ARGS = --no-build
 	OSTREE_BUILD_ARGS = --rootfs "$(APP_BASE_DIR)" --runtime "$(APP_RUNTIME_DIR)"
+	EXTRA_BUILD_TARGET += $(OSTREE_BASE) $(OSTREE_RUNTIME)
 endif
 
-ifeq ($(wildcard $(EXTRA_BUILD)),)
-    EXTRA_BUILD_TARGET =
-else
-    EXTRA_BUILD_TARGET = $(BUILD_TARGET)
-endif
+$(OSTREE_BASE): $(YAML_CONFIG)
+	@echo "[拉取Base]"
+	@$(OSTREE_MAKE_BASE)  $(OSTREE_BASE)
+$(OSTREE_RUNTIME): $(YAML_CONFIG)
+	@echo "[拉取Runtime]"
+	@$(OSTREE_MAKE_RUNTIME) $(OSTREE_RUNTIME) 
+
 
 ifeq ($(wildcard $(EXTRA_POST_BUILD)),)
     EXTRA_POST_BUILD_TARGET =
@@ -108,8 +118,12 @@ $(CONFIG_TARGET):
 	@echo "KILLER_EXEC ?= $(KILLER_EXEC)" >> $(CONFIG_TARGET)
 	@echo "CREATE_ARGS ?= $(CREATE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "BUILD_ARGS ?= $(BUILD_ARGS)" >> $(CONFIG_TARGET)
+	@echo "OSTREE_MAKE_ARGS ?= $(OSTREE_MAKE_ARGS)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_LDD_CHECK ?= $(ENABLE_LDD_CHECK)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_INSTALL ?= $(ENABLE_INSTALL)" >> $(CONFIG_TARGET)
+	@echo "ENABLE_OSTREE ?= $(ENABLE_OSTREE)" >> $(CONFIG_TARGET)
+	@echo "OSTREE_BASE ?= $(OSTREE_BASE)" >> $(CONFIG_TARGET)
+	@echo "OSTREE_RUNTIME ?= $(OSTREE_RUNTIME)" >> $(CONFIG_TARGET)
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
@@ -246,6 +260,7 @@ help:
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
+	@echo "    OSTREE_MAKE_ARGS=        传递给ostree.mk的额外参数 ($(OSTREE_MAKE_ARGS))"
 	@echo ""
 	@echo "  典型工作流:"
 	@echo "    0. 准备自定义的sources.list或留空，自动从主机复制"
