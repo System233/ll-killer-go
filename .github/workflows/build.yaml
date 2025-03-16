@@ -67,7 +67,7 @@ jobs:
         if: ${{ env.release == 'true' }}
         run: |
           go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest
-          git-chglog -o RELEASE.md ${{github.ref_name}}
+          git-chglog --tag-filter-pattern '.*' -o RELEASE.md ${{github.ref_name}}
       - name: Release
         if: ${{ env.release == 'true' }}
         uses: softprops/action-gh-release@v2
