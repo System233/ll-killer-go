@@ -1,4 +1,21 @@
 
+<a name="v1.4.16-dev"></a>
+## [v1.4.16-dev](https://github.com/System233/ll-killer-go/compare/v1.4.15...v1.4.16-dev) (2025-03-16)
+
+### 新增功能
+
+* build支持指定rootfs/runtime; 新增layer exec子命令; Makefile新增ENABLE_OSTREE选项，彻底移除ll-builder依赖
+* 增加基于Makefile的ostree管理器[实验性功能]
+* layer build添加runtime挂载支持
+* 添加仅参数打印功能，用于CLI获取相关信息
+
+### 错误修复
+
+* 退出前卸载目录以避免孤儿进程
+* 修复layer build的根子目录挂载
+* layer build自定义rootfs
+
+
 <a name="v1.4.15"></a>
 ## [v1.4.15](https://github.com/System233/ll-killer-go/compare/v1.4.14...v1.4.15) (2025-03-15)
 
