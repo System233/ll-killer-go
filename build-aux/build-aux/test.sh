@@ -1,6 +1,6 @@
 #!/bin/bash
 # 依赖 xwd scrot
-
+set -e
 if [ "$#" != "2" ];then
     echo "错误：无效参数"
     echo "用法：$0 <应用APPID> <layer文件>"
@@ -43,7 +43,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[正在测试快捷方式/服务单元]"
-ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh"
+ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh" || true
 
 mkdir -p tests
 TASKLOG="tests/task.log"
@@ -56,7 +56,7 @@ while read args; do
     KILLER_TEST_SCREENSHOT="tests/screen$i-%d.jpg" \
         KILLER_TEST_STDIO="tests/output-$i.log" \
         xvfb-run -a "$(dirname $0)/test-display.sh" \
-        "${ARGS[@]}"
+        "${ARGS[@]}" || true
     i=$((i + 1))
 done <"$TASKLOG"
 
