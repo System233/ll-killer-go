@@ -1,4 +1,16 @@
 
+<a name="v1.4.19"></a>
+## [v1.4.19](https://github.com/System233/ll-killer-go/compare/v1.4.18...v1.4.19) (2025-03-17)
+
+### 兼容性更改
+
+* 自动化测试时，仅避免测试失败时退出
+
+### 新增功能
+
+* 允许make PKG直接传入本地deb文件，需要./开头
+
+
 <a name="v1.4.18"></a>
 ## [v1.4.18](https://github.com/System233/ll-killer-go/compare/v1.4.17...v1.4.18) (2025-03-17)
 
