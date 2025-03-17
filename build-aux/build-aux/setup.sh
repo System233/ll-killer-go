@@ -32,6 +32,11 @@ if [ -d "$PREFIX/opt/apps/" ]; then
         -exec "merge-share.sh" "{}" \;
 fi
 
+if [ -d "$PREFIX/usr/local/share" ]; then
+    echo "[合并/usr/local/share目录]"
+    merge-share.sh "$PREFIX/usr/local/share"
+fi
+
 if [ "${KILLER_PACKER:-0}" == "0" ]; then
     echo "[修正符号链接]"
     echo "详细信息: https://github.com/OpenAtom-Linyaps/linyaps/issues/1039"
