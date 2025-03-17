@@ -1,4 +1,17 @@
 
+<a name="v1.4.18"></a>
+## [v1.4.18](https://github.com/System233/ll-killer-go/compare/v1.4.17...v1.4.18) (2025-03-17)
+
+### 兼容性更改
+
+* 自动化测试失败时不再提前终止，每次运行完整的测试
+* 减少Makefile中的clean命令
+
+### 错误修复
+
+* 处理/usr/local/share中的快捷方式
+
+
 <a name="v1.4.17"></a>
 ## [v1.4.17](https://github.com/System233/ll-killer-go/compare/v1.4.15...v1.4.17) (2025-03-17)
 
