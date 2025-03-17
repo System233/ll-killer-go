@@ -199,7 +199,8 @@ clean-ll:
 	ll-builder list|grep ":$(APPID)/"|xargs -r ll-builder remove || true
 clean: clean-fs
 	rm -rf *.log *.layer linglong/output tests
-clean-all: clean clean-apt clean-ll clean-mk $(CONFIG_TARGET)
+clean-all: clean clean-apt clean-ll
+	rm $(CONFIG_TARGET)
 
 test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
