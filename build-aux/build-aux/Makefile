@@ -9,7 +9,7 @@ CONFIG_TARGET ?= config.mk
 -include $(CONFIG_TARGET)
 
 PKG ?= app
-APPID ?= $(PKG).linyaps
+APPID ?= $(if $(filter ./%,$(PKG)),$(shell dpkg-deb -f $(PKG) Package),$(PKG)).linyaps
 
 KILLER ?= $(if $(wildcard ll-killer),./ll-killer,ll-killer)
 BUILD_ARGS ?=
