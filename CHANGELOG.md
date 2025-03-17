@@ -1,4 +1,13 @@
 
+<a name="v1.4.20"></a>
+## [v1.4.20](https://github.com/System233/ll-killer-go/compare/v1.4.19...v1.4.20) (2025-03-17)
+
+### 错误修复
+
+* 修复make clean-all命令
+* ostree当id为空时，不要搜索依赖
+
+
 <a name="v1.4.19"></a>
 ## [v1.4.19](https://github.com/System233/ll-killer-go/compare/v1.4.18...v1.4.19) (2025-03-17)
 
