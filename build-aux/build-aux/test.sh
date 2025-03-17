@@ -1,6 +1,6 @@
 #!/bin/bash
 # 依赖 xwd scrot
-set -e
+
 if [ "$#" != "2" ];then
     echo "错误：无效参数"
     echo "用法：$0 <应用APPID> <layer文件>"

@@ -5,7 +5,7 @@ SHARE_DIR="/opt/apps/${LINGLONG_APPID}/files/share"
 ERRORS=()
 function log_error() {
     ERRORS+=("$@")
-    echo -e "\033[31m错误: $@ \033[0m" >&2
+    echo -e "\033[31m$@ \033[0m" >&2
 }
 DIR_LIST=()
 function check_dir() {
