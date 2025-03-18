@@ -6,7 +6,9 @@
 
 SHELL=/bin/bash -o pipefail
 CONFIG_TARGET ?= config.mk
+ifneq ($(wildcard $(CONFIG_TARGET)),)
 -include $(CONFIG_TARGET)
+endif
 
 PKG ?= app
 APPID ?= $(if $(filter ./%,$(PKG)),$(shell dpkg-deb -f $(PKG) Package),$(PKG)).linyaps
