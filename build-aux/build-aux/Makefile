@@ -22,6 +22,7 @@ ENABLE_PTRACE ?=1
 ENABLE_OSTREE ?=0
 LDD_CHECK_MODE ?= fast
 
+FILTER_LIST ?= NoDisplay Hidden
 SOURCES_LIST = sources.list
 UPDATE_TARGET ?= apt-update.log
 INSTALL_TARGET ?= apt-install.log
@@ -206,9 +207,9 @@ clean-all: clean clean-apt clean-ll
 
 test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
-	build-aux/test.sh $(APPID) $(LAYER_NAME) 2>&1 | tee test.log
+	build-aux/test.sh $(APPID) $(LAYER_NAME) "$(FILTER_LIST)" 2>&1 | tee test.log
 test: $(YAML_CONFIG)
-	@$(MAKE) --no-print-directory test-dynamic
+	@$(MAKE) --no-print-directory test-dynamic FILTER_LIST="$(FILTER_LIST)"
 
 help:
 	@echo "  ll-killer - 基于Makefile的玲珑项目管理工具"
@@ -244,7 +245,8 @@ help:
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
-	@echo "    OSTREE_MAKE_ARGS=        传递给ostree.mk的额外参数 ($(OSTREE_MAKE_ARGS))"
+	@echo "    FILTER_LIST=             启动项测试排除项目，空格分隔 ($(FILTER_LIST))"
+	@echo "                             可选值：NoDisplay|Hidden|Terminal"
 	@echo ""
 	@echo "  典型工作流:"
 	@echo "    0. 准备自定义的sources.list或留空，自动从主机复制"

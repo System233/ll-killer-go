@@ -1,11 +1,14 @@
 #!/bin/bash
 # 依赖 xwd scrot
 set -e
-if [ "$#" != "2" ];then
+if [ "$#" -lt "2" ];then
     echo "错误：无效参数"
-    echo "用法：$0 <应用APPID> <layer文件>"
+    echo "用法：$0 <应用APPID> <layer文件> [空格分隔排除列表: NoDisplay Hidden Terminal]"
     exit 1
 fi
+APPID="$1"
+LAYER="$2"
+FILTER_LIST="$3"
 NEEDS=()
 function check_dep(){
     dep=$1
@@ -24,8 +27,6 @@ if [ ! ${#NEEDS} -eq 0 ];then
     exit 1
 fi
 
-APPID="$1"
-LAYER="$2"
 echo "正在测试: APPID=${APPID} LAYER=${LAYER}"
 LLCLI_VER=$(LANG=en ll-cli --version | grep -oP "version\s*\K.*")
 SUDO=
@@ -45,12 +46,13 @@ trap cleanup EXIT
 echo "[正在测试快捷方式/服务单元]"
 ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh" || true
 
-mkdir -p tests
-TASKLOG="tests/task.log"
-ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG"
-
 i=0
 echo "[正在测试启动项]"
+
+mkdir -p tests
+TASKLOG="tests/task.log"
+ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG" "$FILTER_LIST"
+
 while read args; do
     ARGS=($args)
     KILLER_TEST_SCREENSHOT="tests/screen$i-%d.jpg" \
