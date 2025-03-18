@@ -197,11 +197,11 @@ build: $(YAML_CONFIG) $(EXTRA_DEPS) $(EXTRA_BUILD_TARGET)
 clean-apt:
 	rm -rf linglong/apt
 clean-fs:
-	rm -rf linglong/filesystem
+	rm -rf linglong/output linglong/filesystem
 clean-ll:
 	ll-builder list|grep ":$(APPID)/"|xargs -r ll-builder remove || true
 clean: clean-fs
-	rm -rf *.log *.layer linglong/output tests
+	rm -rf *.log *.layer tests
 clean-all: clean clean-apt clean-ll
 	rm $(CONFIG_TARGET)
 
