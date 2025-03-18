@@ -1,4 +1,20 @@
 
+<a name="v1.4.21"></a>
+## [v1.4.21](https://github.com/System233/ll-killer-go/compare/v1.4.20...v1.4.21) (2025-03-18)
+
+### 兼容性更改
+
+* clean-fs时同时删除filesystem和output
+
+### 新增功能
+
+* 允许通过FILTER_LIST变量设置make test的排除列表
+
+### 错误修复
+
+* 避免make help等只读操作生成config.mk
+
+
 <a name="v1.4.20"></a>
 ## [v1.4.20](https://github.com/System233/ll-killer-go/compare/v1.4.19...v1.4.20) (2025-03-17)
 
