@@ -45,7 +45,17 @@ type ExitStatus struct {
 func (s *ExitStatus) Error() string {
 	return fmt.Sprint("exited:", s.ExitCode)
 }
-
+func RemountProc() error {
+	if err := Mount(&MountOption{
+		Source: "proc",
+		Target: "/proc",
+		FSType: "proc",
+		Flags:  syscall.MS_RELATIME | syscall.MS_NODEV | syscall.MS_NOEXEC | syscall.MS_NOSUID,
+	}); err != nil {
+		return fmt.Errorf("remount:/proc: %v", err)
+	}
+	return nil
+}
 func CreateCommand(name string) *exec.Cmd {
 	cmd := reexec.Command(name)
 	cmd.Args = append(cmd.Args, os.Args[1:]...)
@@ -87,6 +97,8 @@ func SwitchTo(next string, flags *SwitchFlags) error {
 			cmd.SysProcAttr.Unshareflags ^= syscall.CLONE_NEWUSER
 		}
 	}
+	cmd.SysProcAttr.Cloneflags = flags.Cloneflags ^ syscall.CLONE_NEWNS
+	cmd.SysProcAttr.Unshareflags = flags.Cloneflags & syscall.CLONE_NEWNS
 	Debug("SwitchTo", fmt.Sprintf("%#x", cmd.SysProcAttr.Unshareflags), cmd.Path, cmd.Args)
 	return cmd.Run()
 }
@@ -439,6 +451,9 @@ func Debug(v ...any) {
 }
 func ExitWith(err error, v ...any) {
 	Debug("ExitWith", err, v)
+	if err := WaitForChild(); err != nil {
+		Debug("WaitForChild", err)
+	}
 	if err == nil {
 		os.Exit(0)
 	}

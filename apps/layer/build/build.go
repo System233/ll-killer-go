@@ -19,9 +19,9 @@ import (
 	"github.com/System233/ll-killer-go/apps/layer/fs"
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/layer"
+	"github.com/System233/ll-killer-go/reexec"
 	"github.com/System233/ll-killer-go/utils"
 
-	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
 )
 
@@ -72,29 +72,37 @@ const WorkDir = "linglong/output"
 var Config layer.Config
 var LayerInfo layer.LayerInfo
 
-func PostPackUp(workDir string) {
+func PostPackUp(workDir string) error {
 	baseDir := path.Join(workDir, "layer")
 	appID := Config.Package.ID
 
-	utils.Must(os.MkdirAll(baseDir, 0755))
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		return err
+	}
 
 	// 创建files目录并挂载
 	filesDir := path.Join(baseDir, "files")
 	buildHostDir := path.Join(workDir, "build")
-	utils.Must(os.MkdirAll(filesDir, 0755))
-	utils.Must(utils.MountBind(buildHostDir, filesDir, syscall.MS_BIND))
-	// utils.Must(os.Link(buildHostDir, filesDir))
+	if err := os.MkdirAll(filesDir, 0755); err != nil {
+		return err
+	}
+	if err := utils.MountBind(buildHostDir, filesDir, syscall.MS_BIND); err != nil {
+		return err
+	}
 
 	// 创建entries目录
 	entriesDir := path.Join(baseDir, "entries")
-	utils.Must(os.MkdirAll(entriesDir, 0755))
 
+	if err := os.MkdirAll(entriesDir, 0755); err != nil {
+		return err
+	}
 	// 处理share目录硬链接
 	shareSrc := path.Join(filesDir, "share")
 	if _, err := os.Stat(shareSrc); err == nil {
 		shareDst := path.Join(entriesDir, "share")
-		utils.Must(utils.MountBind(shareSrc, shareDst, 0))
-		// utils.Must(os.Link(shareSrc, shareDst))
+		if err := utils.MountBind(shareSrc, shareDst, 0); err != nil {
+			return err
+		}
 	}
 
 	// 生成install文件
@@ -116,21 +124,30 @@ func PostPackUp(workDir string) {
 		return nil
 	})
 
-	utils.Must(os.WriteFile(installFile, []byte(fileList.String()), 0644))
+	if err := os.WriteFile(installFile, []byte(fileList.String()), 0644); err != nil {
+		return err
+	}
 
 	LayerInfo.Size = totalSize
 	// 复制linglong.yaml
 	yamlSrc := path.Join(".", "linglong.yaml")
 	yamlDst := path.Join(baseDir, "linglong.yaml")
-	utils.Must(utils.CopyFileIO(yamlSrc, yamlDst))
+
+	if err := utils.CopyFileIO(yamlSrc, yamlDst); err != nil {
+		return err
+	}
 
 	infoJsonPath := path.Join(baseDir, "info.json")
 	infoJsonData, err := json.Marshal(LayerInfo)
-	utils.Must(err, "无法序列化info.json")
 
-	utils.Must(os.WriteFile(infoJsonPath, infoJsonData, 0755), "生成info.json失败")
+	if err != nil {
+		return fmt.Errorf("无法序列化info.json:%v", err)
+	}
 
-	utils.Must(layer.Pack(&layer.PackOption{
+	if err := os.WriteFile(infoJsonPath, infoJsonData, 0755); err != nil {
+		return fmt.Errorf("生成info.json失败:%v", err)
+	}
+	if err := layer.Pack(&layer.PackOption{
 		Source:     baseDir,
 		Target:     Flag.Target,
 		Compressor: Flag.Compressor,
@@ -138,10 +155,13 @@ func PostPackUp(workDir string) {
 		Gid:        Flag.Gid,
 		Uid:        Flag.Uid,
 		Args:       Flag.PackArgs,
-	}), "生成layer失败")
+	}); err != nil {
+		return fmt.Errorf("生成layer失败:%v", err)
+	}
+	return nil
 }
 
-func RunBuildScript(workDir string) {
+func RunBuildScript(workDir string) error {
 	if len(Flag.Args) == 0 {
 		Flag.Args = append(Flag.Args, "linglong/entry.sh")
 	}
@@ -149,47 +169,60 @@ func RunBuildScript(workDir string) {
 	cmd.Dir = "/project"
 
 	if err := cmd.Run(); err != nil {
-		utils.ExitWith(err, "构建失败")
+		return fmt.Errorf("构建失败:%v", err)
 	}
+	return nil
 }
 
-func RunPostSetup(workDir string) {
+func RunPostSetup(workDir string) error {
 	cmd := utils.NewCommand(PostSetupScript)
 	cmd.Dir = "/project"
 	if err := cmd.Run(); err != nil {
-		utils.ExitWith(err, "后处理失败")
+		return fmt.Errorf("后处理失败:%v", err)
 	}
+	return nil
 }
 
-func BuildLayer() {
+func BuildLayer() error {
 	killerPackerEnv := os.Getenv(config.KillerPackerEnv)
 	if killerPackerEnv == "" {
 		os.Setenv(config.KillerPackerEnv, "1")
 	}
 	log.Println("[准备构建环境]")
 
-	fs.SetupFilesystem(fs.SetupFilesystemOption{
+	if err := utils.RemountProc(); err != nil {
+		return err
+	}
+
+	if err := fs.SetupFilesystem(fs.SetupFilesystemOption{
 		RootFs:    Flag.RootFs,
 		Runtime:   Flag.Runtime,
 		Quiet:     Flag.Quiet,
 		Config:    &Config,
 		LayerInfo: &LayerInfo,
-	})
+	}); err != nil {
+		return err
+	}
 
 	log.Println("[运行构建脚本]")
-	RunBuildScript(WorkDir)
+	if err := RunBuildScript(WorkDir); err != nil {
+		return err
+	}
 
 	if !Flag.NoPostSetup {
 		log.Println("[文件后处理]")
-		RunPostSetup(WorkDir)
+		if err := RunPostSetup(WorkDir); err != nil {
+			return err
+		}
 	}
-	fs.PostFilesystem()
-
-	if !Flag.NoLayer {
-		log.Println("[打包输出]")
-		PostPackUp(WorkDir)
+	if err := fs.PostFilesystem(); err != nil {
+		return err
 	}
-
+	if Flag.NoLayer {
+		return nil
+	}
+	log.Println("[打包输出]")
+	return PostPackUp(WorkDir)
 }
 func GetBuildArgs() []string {
 	args := []string{
@@ -233,17 +266,26 @@ func PrintLayerInfo(key string, json bool) error {
 		fmt.Println(Flag.Target)
 		return nil
 	}
-	utils.Must(utils.LoadYamlFile(config.LinglongYaml, &cfg), "读取linglong.yaml失败")
-	utils.Must(info.ParseLayerInfo(cfg), "linglong.yaml配置不合法")
+	if err := utils.LoadYamlFile(config.LinglongYaml, &cfg); err != nil {
+		return fmt.Errorf("读取linglong.yaml失败:%v", err)
+	}
+
+	if err := info.ParseLayerInfo(cfg); err != nil {
+		return fmt.Errorf("linglong.yaml配置不合法:%v", err)
+	}
 	info.FileName = info.LayerInfo.FileName()
 	var mapData map[string]interface{}
 	data, err := utils.DumpJsonData(info)
-	utils.Must(err)
+	if err != nil {
+		return err
+	}
 	if json {
 		fmt.Println(string(data))
 		return nil
 	}
-	utils.Must(utils.LoadJsonData(data, &mapData))
+	if err := utils.LoadJsonData(data, &mapData); err != nil {
+		return err
+	}
 	value, ok := mapData[key]
 	if !ok {
 		return nil
@@ -254,8 +296,9 @@ func PrintLayerInfo(key string, json bool) error {
 func BuildMain(cmd *cobra.Command, args []string) error {
 	Flag.Args = args
 	reexec.Register("BuildLayer", BuildLayer)
-	if reexec.Init() {
-		return nil
+	ok, err := reexec.Init()
+	if ok {
+		return err
 	}
 	if Flag.PrintLayerName || Flag.Print != "" || Flag.PrintJson {
 		target := "fileName"
@@ -267,7 +310,7 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	return utils.SwitchTo("BuildLayer", &utils.SwitchFlags{
 		UID:           0,
 		GID:           0,
-		Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+		Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER | syscall.CLONE_NEWPID,
 		Args:          append([]string{"layer", "build"}, GetBuildArgs()...),
 		NoDefaultArgs: true,
 	})

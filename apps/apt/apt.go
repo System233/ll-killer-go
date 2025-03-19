@@ -12,9 +12,9 @@ import (
 	"syscall"
 
 	"github.com/System233/ll-killer-go/config"
+	"github.com/System233/ll-killer-go/reexec"
 	"github.com/System233/ll-killer-go/utils"
 
-	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +32,7 @@ var APTFlag struct {
 	Args []string
 }
 
-func MountAPT() {
+func MountAPT() error {
 	/*
 			mkdir -p sources.list.d "$APT_TMP_DIR/apt" "$APT_TMP_DIR/cache"
 		    mount --bind ./sources.list /etc/apt/sources.list
@@ -42,9 +42,12 @@ func MountAPT() {
 		    apt -o APT::Sandbox::User="root" update -y
 		    reexec shell
 	*/
+	if err := utils.RemountProc(); err != nil {
+		return err
+	}
 	err := os.MkdirAll(config.AptDir, 0755)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 	err = utils.MkdirAlls([]string{
 		config.AptDataDir,
@@ -53,12 +56,12 @@ func MountAPT() {
 		config.AptDpkgDir,
 	}, 0755)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 	statusPath := path.Join(config.AptDpkgDir, "status")
 	file, err := os.OpenFile(statusPath, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		utils.ExitWith(err)
+		return err
 	}
 	file.Close()
 	err = utils.MountAll([]utils.MountOption{
@@ -105,17 +108,21 @@ func MountAPT() {
 	})
 
 	if err != nil {
-		utils.ExitWith(err, "MountAll")
+		return err
 	}
-	utils.Exec(APTFlag.Args...)
+	return utils.ExecRaw(APTFlag.Args...)
 }
 func APTMain(cmd *cobra.Command, args []string) error {
 	APTFlag.Args = args
 	reexec.Register("MountAPT", MountAPT)
-	if !reexec.Init() {
-		return utils.SwitchTo("MountAPT", &utils.SwitchFlags{UID: 0, GID: 0, Cloneflags: syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER})
+	ok, err := reexec.Init()
+	if ok {
+		return err
 	}
-	return nil
+	return utils.SwitchTo("MountAPT", &utils.SwitchFlags{
+		UID: 0, GID: 0,
+		Cloneflags: syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER | syscall.CLONE_NEWPID,
+	})
 }
 func CreateAPTCommand() *cobra.Command {
 	return &cobra.Command{

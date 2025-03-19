@@ -42,12 +42,17 @@ const MainCommandHelp = `ll-killer 是一个工具，旨在解决玲珑容器应
   commit  提交构建内容至玲珑容器。
   run     运行已构建的应用进行测试。
 
+* 关于如何加速构建，优化磁盘占用，请查看layer子命令帮助。
+
 运行 "<program> <command> --help" 以查看子命令的详细信息。
 
 更多信息请查看项目主页: https://github.com/System233/ll-killer-go.git
 `
 
 func main() {
+	if err := utils.InitChildSubreaper(); err != nil {
+		utils.ExitWith(err)
+	}
 	if os.Getenv(config.KillerDebug) != "" {
 		utils.GlobalFlag.Debug = true
 	}
@@ -90,8 +95,6 @@ func main() {
 	if _ptrace.IsSupported {
 		app.AddCommand(_ptrace.CreatePtraceCommand())
 	}
-	if err := app.Execute(); err != nil {
-		utils.ExitWith(err)
-	}
+	utils.ExitWith(app.Execute())
 
 }

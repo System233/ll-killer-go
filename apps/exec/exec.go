@@ -16,9 +16,9 @@ import (
 
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/pty"
+	"github.com/System233/ll-killer-go/reexec"
 	"github.com/System233/ll-killer-go/utils"
 
-	"github.com/moby/sys/reexec"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +35,7 @@ var ExecFlag struct {
 	AutoExit          bool
 	Root              bool
 	Wait              bool
+	WaitTimeout       time.Duration
 	NoFail            bool
 	NoBindRootFS      bool
 	NsEnter           bool
@@ -128,6 +129,10 @@ func GetExecArgs() []string {
 
 	args = append(args, fmt.Sprint("--wait=", ExecFlag.Wait))
 
+	if ExecFlag.WaitTimeout != 0 {
+		args = append(args, "--wait-timeout", fmt.Sprint(ExecFlag.WaitTimeout))
+	}
+
 	if ExecFlag.Socket != "" {
 		args = append(args, "--socket", ExecFlag.Socket)
 	}
@@ -158,54 +163,54 @@ func NewPtyFromFlags() *pty.Pty {
 		AutoExit: ExecFlag.AutoExit,
 	}
 }
-func PivotRootSystem() {
+func PivotRootSystem() error {
 	utils.Debug("PivotRootSystem")
 	if !ExecFlag.NoBindRootFS {
 		err := utils.MountBind(ExecFlag.RootFS, ExecFlag.RootFS, 0)
 		if err != nil {
-			utils.ExitWith(err)
+			return err
 		}
 	}
 	oldRootFS := fmt.Sprint(ExecFlag.RootFS, ExecFlag.RootFS)
 	utils.Debug("PivotRoot", ExecFlag.RootFS, oldRootFS)
 	if err := syscall.PivotRoot(ExecFlag.RootFS, oldRootFS); err != nil {
-		utils.ExitWith(err)
+		return err
 	}
-	ExecShell()
+	return ExecShell()
 }
 
-func ExecSystem() {
+func ExecSystem() error {
 	utils.Debug("ExecSystem")
 	if ExecFlag.Socket != "" {
 		pty := NewPtyFromFlags()
-		pty.Serve()
+		return pty.Serve()
 	} else {
-		utils.Exec(ExecFlag.Args...)
+		return utils.ExecRaw(ExecFlag.Args...)
 	}
 }
-func ExecShell() {
+func ExecShell() error {
 	if ExecFlag.UID == 0 && ExecFlag.GID == 0 || ExecFlag.Root {
-		utils.Exec(ExecFlag.Args...)
-		return
+		return utils.ExecRaw(ExecFlag.Args...)
 	}
 	err := utils.SwitchTo("ExecSystem", &utils.SwitchFlags{
 		UID:        ExecFlag.UID,
 		GID:        ExecFlag.GID,
 		Cloneflags: syscall.CLONE_NEWUSER,
 	})
-	if err != nil {
-		utils.ExitWith(err)
-	}
+	return err
 }
-func MountFileSystem() {
+func MountFileSystem() error {
 	utils.Debug("MountFileSystem")
+	if err := utils.RemountProc(); err != nil {
+		return err
+	}
 	isFuseOverlayFs := false
 	for _, mount := range ExecFlag.Mounts {
 		opt := utils.ParseMountOption(mount)
 		err := opt.Mount()
 		if err != nil {
 			if ExecFlag.NoFail {
-				utils.ExitWith(err, "mount", mount)
+				return fmt.Errorf("mount:%s:%v", mount, err)
 			}
 			log.Println(err)
 		}
@@ -218,13 +223,13 @@ func MountFileSystem() {
 		oldRootFS := fmt.Sprint(ExecFlag.RootFS, ExecFlag.RootFS)
 		err := utils.MkdirAlls([]string{oldRootFS}, 0755)
 		if err != nil {
-			utils.ExitWith(err)
+			return err
 		}
 
 		if isFuseOverlayFs {
 			err = utils.SwitchTo("PivotRootSystem", &utils.SwitchFlags{Cloneflags: syscall.CLONE_NEWNS})
 			if err != nil {
-				utils.ExitWith(err)
+				return err
 			}
 		} else {
 			PivotRootSystem()
@@ -232,12 +237,13 @@ func MountFileSystem() {
 	} else {
 		ExecShell()
 	}
+	return nil
 }
 func StartMountFileSystem() error {
 	return utils.SwitchTo("MountFileSystem", &utils.SwitchFlags{
 		UID:           0,
 		GID:           0,
-		Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER,
+		Cloneflags:    syscall.CLONE_NEWNS | syscall.CLONE_NEWUSER | syscall.CLONE_NEWPID,
 		Args:          append([]string{"exec"}, GetExecArgs()...),
 		NoDefaultArgs: true,
 	})
@@ -247,66 +253,70 @@ func ExecMain(cmd *cobra.Command, args []string) error {
 	ExecFlag.Args = args
 	utils.GlobalFlag.FuseOverlayFS = ExecFlag.FuseOverlayFS
 	utils.GlobalFlag.FuseOverlayFSArgs = ExecFlag.FuseOverlayFSArgs
+	if ExecFlag.Wait {
+		utils.SetChildSubreaperWaitDuration(ExecFlag.WaitTimeout)
+	}
 	reexec.Register("MountFileSystem", MountFileSystem)
 	reexec.Register("ExecSystem", ExecSystem)
 	reexec.Register("PivotRootSystem", PivotRootSystem)
-	if !reexec.Init() {
-		if ExecFlag.Socket != "" {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			ptyFlag := NewPtyFromFlags()
-			ptyFlag.Timeout = 0
-			args := &pty.PtyExecArgs{
-				Args:   args,
-				Dir:    cwd,
-				Env:    os.Environ(),
-				NsType: ExecFlag.NsType,
-				// NoFail: ExecFlag.NoFail,
-			}
-			execFunc := func(ptyFlag *pty.Pty) (int, error) {
-				if ExecFlag.NsEnter {
-					return ptyFlag.NsEnter(args)
-				}
-				return ptyFlag.Call(args)
-			}
-			exitCode, err := execFunc(ptyFlag)
-			utils.Debug("pty.Call", exitCode, err)
-			if err != nil {
-				var signal chan error = make(chan error, 2)
-				go func() {
-					signal <- StartMountFileSystem()
-				}()
-				go func() {
-					ptyFlag.Timeout = ExecFlag.SocketTimeout
-					exitCode, err := execFunc(ptyFlag)
-					if err == nil {
-						err = &utils.ExitStatus{ExitCode: exitCode}
-					}
-					signal <- err
-				}()
-				err = <-signal
-				if ExecFlag.Wait {
-					utils.Debug("正在等待已连接的进程全部退出")
-					bgErr := <-signal
-					if bgErr != nil {
-						if err != nil {
-							log.Println(bgErr)
-						} else {
-							err = bgErr
-						}
-					}
-					return err
-				}
-				return err
-			}
-			return &utils.ExitStatus{ExitCode: exitCode}
-		} else {
-			return StartMountFileSystem()
-		}
+	ok, err := reexec.Init()
+	if ok {
+		return err
 	}
-	return nil
+	if ExecFlag.Socket != "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		ptyFlag := NewPtyFromFlags()
+		ptyFlag.Timeout = 0
+		args := &pty.PtyExecArgs{
+			Args:   args,
+			Dir:    cwd,
+			Env:    os.Environ(),
+			NsType: ExecFlag.NsType,
+			// NoFail: ExecFlag.NoFail,
+		}
+		execFunc := func(ptyFlag *pty.Pty) (int, error) {
+			if ExecFlag.NsEnter {
+				return ptyFlag.NsEnter(args)
+			}
+			return ptyFlag.Call(args)
+		}
+		exitCode, err := execFunc(ptyFlag)
+		utils.Debug("pty.Call", exitCode, err)
+		if err != nil {
+			var signal chan error = make(chan error, 2)
+			go func() {
+				signal <- StartMountFileSystem()
+			}()
+			go func() {
+				ptyFlag.Timeout = ExecFlag.SocketTimeout
+				exitCode, err := execFunc(ptyFlag)
+				if err == nil {
+					err = &utils.ExitStatus{ExitCode: exitCode}
+				}
+				signal <- err
+			}()
+			err = <-signal
+			if ExecFlag.Wait {
+				utils.Debug("正在等待已连接的进程全部退出")
+				bgErr := <-signal
+				if bgErr != nil {
+					if err != nil {
+						log.Println(bgErr)
+					} else {
+						err = bgErr
+					}
+				}
+				return err
+			}
+			return err
+		}
+		return &utils.ExitStatus{ExitCode: exitCode}
+	} else {
+		return StartMountFileSystem()
+	}
 }
 
 func CreateExecCommand() *cobra.Command {
@@ -330,7 +340,8 @@ func CreateExecCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&ExecFlag.NoBindRootFS, "no-bind-rootfs", false, "手动挂载rootfs")
 	cmd.Flags().BoolVar(&ExecFlag.AutoExit, "auto-exit", true, "当没有进程连接时，自动退出服务")
 	cmd.Flags().BoolVar(&ExecFlag.NoFail, "no-fail", false, "任何步骤失败时立即退出")
-	cmd.Flags().BoolVar(&ExecFlag.Wait, "wait", false, "作为服务进程等待所有进程退出")
+	cmd.Flags().BoolVar(&ExecFlag.Wait, "wait", false, "作为服务进程等待所有进程退出，默认杀死所有子进程。")
+	cmd.Flags().DurationVar(&ExecFlag.WaitTimeout, "wait-timeout", -1, "等待所有进程退出的最大超时时间，-1为永久等待。")
 	cmd.Flags().BoolVar(&ExecFlag.Root, "root", false, "以root身份运行（覆盖uid/gid选项）")
 	cmd.Flags().BoolVar(&ExecFlag.NsEnter, "nsenter", false, "进入命名空间启动命令[暂时不可用]")
 	cmd.Flags().StringSliceVarP(&ExecFlag.NsType, "nstype", "N", []string{"user", "pid", "mnt"}, "切换的命名空间类型")
