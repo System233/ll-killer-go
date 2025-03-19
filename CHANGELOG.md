@@ -1,10 +1,15 @@
 
-<a name="v1.4.22-dev"></a>
-## [v1.4.22-dev](https://github.com/System233/ll-killer-go/compare/v1.4.21...v1.4.22-dev) (2025-03-19)
+<a name="v1.4.23"></a>
+## [v1.4.23](https://github.com/System233/ll-killer-go/compare/v1.4.21...v1.4.23) (2025-03-20)
 
 ### 新增功能
 
+* 新增update子命令，支持通过update命令更新ll-killer
 * 将自身作为init进程阻塞容器并等待所有后台进程退出 。 本功能用于解决某些应用拉起daemon进程后退出，导致容器销毁的问题。 为此，exec和layer exec子命令添加了wait-timeout参数，可以控制等待的最大时长，若指定了此参数，达到超时时间将杀死所有进程。
+
+### 构建系统
+
+* 哈希校验升级至sha256，校验文件更名为SHA256SUMS，增加SHA256SUMS.asc签名文件
 
 
 <a name="v1.4.21"></a>
