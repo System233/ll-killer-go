@@ -13,7 +13,10 @@ ifeq ($(ENABLE_NO_EVM),yes)
 else
 	EXTRA_TAG := 
 endif
-LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)-$(GOARCH)$(EXTRA_TAG)" -X "$(MODULE)/config.BuildTime=$(BUILDTIME)"
+LDFLAGS := -X "$(MODULE)/config.Version=$(VERSION)-$(GOARCH)$(EXTRA_TAG)" \
+		   -X "$(MODULE)/config.BuildTime=$(BUILDTIME)" \
+		   -X "$(MODULE)/config.Tag=$(VERSION)" \
+		   -X "$(MODULE)/config.Variant=$(GOARCH)" \
 
 FUSE_LIBS := libfuse-overlayfs.a libgnu.a
 FUSE_DIR := fuse-overlayfs
@@ -23,7 +26,7 @@ FUSE_PROJECT := $(foreach file, $(FUSE_PROJECT_DEPS), $(FUSE_DIR)/$(file))
 FUSE_SRCS := $(foreach file, $(FUSE_PROJECT_SRC), $(FUSE_DIR)/$(file))
 
 RES_DIRS := build-aux/build-aux build-aux/apt.conf.d
-SRC_DIRS := build-aux config apps layer pty utils
+SRC_DIRS := build-aux config apps layer pty utils updater reexec
 GO_SOURCES:= $(wildcard *.go) $(shell find $(SRC_DIRS) -name '*.go')
 GO_RESOURCES:= $(foreach dir, $(RES_DIRS), $(dir)/*)
 GO_TEST_SOURCES:= $(wildcard *_test.go) $(shell find $(SRC_DIRS) -name '*_test.go')

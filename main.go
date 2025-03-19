@@ -25,6 +25,7 @@ import (
 	_ptrace "github.com/System233/ll-killer-go/apps/ptrace"
 	_run "github.com/System233/ll-killer-go/apps/run"
 	_script "github.com/System233/ll-killer-go/apps/script"
+	_update "github.com/System233/ll-killer-go/apps/update"
 	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/utils"
 
@@ -90,7 +91,8 @@ func main() {
 		_nsenter.NsEnterNsEnterCommand(),
 		_run.CreateRunCommand(),
 		_commit.CreateCommitCommand(),
-		_export.CreateExportCommand())
+		_export.CreateExportCommand(),
+		_update.CreateUpdateCommand())
 	app.Version = fmt.Sprintf("%s/%s", config.Version, config.BuildTime)
 	if _ptrace.IsSupported {
 		app.AddCommand(_ptrace.CreatePtraceCommand())

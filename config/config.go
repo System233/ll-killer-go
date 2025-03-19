@@ -28,9 +28,13 @@ const (
 	MountArgsSep      = ":"
 	MountArgsItemSep  = "+"
 	FuseOverlayFSType = "fuse-overlayfs"
+	Repo              = "System233/ll-killer-go"
+	GithubURL         = "https://github.com/" + Repo
 )
 
 var (
 	Version   = "unknown"
 	BuildTime = "unknown"
+	Tag       = "unknown"
+	Variant   = "unknown"
 )
