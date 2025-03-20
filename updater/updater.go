@@ -225,7 +225,7 @@ func Update(opt UpdateOption) error {
 		return fmt.Errorf("已达最大重试次数，检查更新失败:%v", err)
 	}
 	if info.Tag == config.Tag {
-		log.Println("当前已是最新版本: ", info.Tag)
+		log.Println("当前已是最新版本:", info.Tag)
 		return nil
 	}
 	asset := FindUpdateAsset(*info)
