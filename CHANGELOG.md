@@ -1,4 +1,16 @@
 
+<a name="v1.4.26"></a>
+## [v1.4.26](https://github.com/System233/ll-killer-go/compare/v1.4.25...v1.4.26) (2025-03-20)
+
+### 新增功能
+
+* 增加xpm图标的修复和测试功能
+
+### 错误修复
+
+* 确保入口可执行文件具有执行和读权限
+
+
 <a name="v1.4.25"></a>
 ## [v1.4.25](https://github.com/System233/ll-killer-go/compare/v1.4.24...v1.4.25) (2025-03-20)
 
