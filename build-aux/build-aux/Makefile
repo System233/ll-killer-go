@@ -204,7 +204,17 @@ clean: clean-fs
 	rm -rf *.log *.layer tests
 clean-all: clean clean-apt clean-ll
 	rm $(CONFIG_TARGET)
-
+ldd-check:
+	rm $(LDD_CHECK_TARGET)
+	make --no-print-directory $(LDD_CHECK_TARGET)
+ldd-search:
+	rm $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET)
+	make --no-print-directory ldd_search
+rebuild: $(YAML_CONFIG)
+	touch $(YAML_CONFIG)
+	make --no-print-directory layer
+check: ldd-check ldd-search
+	make --no-print-directory $(LDD_INSTALL_TARGET)
 test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
 	build-aux/test.sh $(APPID) $(LAYER_NAME) "$(FILTER_LIST)" 2>&1 | tee test.log
@@ -223,6 +233,10 @@ help:
 	@echo "    init          初始化项目并创建 $(YAML_CONFIG)"
 	@echo "    build         进入当前配置下的构建环境"
 	@echo "    update        更新APT软件源缓存"
+	@echo "    rebuild       重新构建layer文件"
+	@echo "    ldd-check     检查缺失依赖库"
+	@echo "    ldd-search    搜索缺失依赖库"
+	@echo "    check    	 检查搜索并安装缺失依赖库"
 	@echo "    install       安装主包和额外依赖到构建环境"
 	@echo "    layer         构建layer文件"
 	@echo "    clean         清除生成的文件、测试输出和layer"
@@ -291,5 +305,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all build config init update install layer layer-dynamic clean clean-all clean-apt clean-ll clean-fs help test test-dynamic
+.PHONY: all build config init ldd-check ldd-search check update install layer layer-dynamic clean clean-all clean-apt clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
