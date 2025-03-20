@@ -24,11 +24,12 @@ while read desktop; do
         if [ -z "$icon" ];then
             continue
         fi
-        found=$(find "${SHARE_DIR}/icons" "/usr/share/icons" "/usr/share/pixmaps" \( -name "${icon}.xpm" -o -name "${icon}.png" -o -name "${icon}.svg" \) -print -quit)
+        found=$(find "${SHARE_DIR}/icons" "${SHARE_DIR}/pixmaps" "/usr/share/icons" "/usr/share/pixmaps" \( -name "${icon}.xpm" -o -name "${icon}.png" -o -name "${icon}.svg" \) -print -quit)
+        name=$(basename "$desktop")
         if [ ! -e "$found" ]; then
-            log_error "[失败] $desktop:$icon: 找不到此图标"
+            log_error "[失败] $name:$icon: 找不到此图标"
         else
-            echo "[成功] $desktop: $icon"
+            echo "[成功] $name: $icon -> $found"
         fi
     done <<<$(grep -oP "^Icon.*?=\K.*$" "$desktop")
 
