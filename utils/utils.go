@@ -19,6 +19,7 @@ import (
 	"syscall"
 
 	"github.com/System233/ll-killer-go/config"
+	"golang.org/x/sys/unix"
 
 	"github.com/moby/sys/reexec"
 )
@@ -440,10 +441,20 @@ func (opt *MountOption) buildFileSystem(sources []string, target string, filesys
 }
 
 func (opt *MountOption) Mount() error {
-
 	return Mount(opt)
 }
 
+func (opt *MountOption) IsFuse() bool {
+	return opt.FSType == config.FuseOverlayFSType || opt.FSType == "ifovl"
+}
+func (opt *MountOption) Unmount() error {
+	if opt.FSType != "" && opt.FSType != "merge" {
+		err := unix.Unmount(opt.Target, unix.MNT_DETACH)
+		Debug("Unmount", opt.Target, err)
+		return err
+	}
+	return nil
+}
 func Debug(v ...any) {
 	if GlobalFlag.Debug {
 		log.Println(v...)

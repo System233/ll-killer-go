@@ -51,7 +51,7 @@ func WaitForChild() error {
 					return
 				default:
 					var status syscall.WaitStatus
-					pid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
+					pid, err := syscall.Wait4(-1, &status, 0, nil)
 					if err != nil {
 						if err == unix.ECHILD {
 							Debug("所有后台进程已退出")
@@ -62,7 +62,7 @@ func WaitForChild() error {
 						sig <- err
 						return
 					}
-					Debug(fmt.Sprintf("Reaped process %d with status %d\n", pid, status.ExitStatus()))
+					Debug(fmt.Sprintf("Reaped process %d with status %d", pid, status.ExitStatus()))
 				}
 			}
 		}()

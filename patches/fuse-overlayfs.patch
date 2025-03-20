@@ -24,3 +24,47 @@ index 9708b51..475d4f9 100644
  
  WD := $(shell pwd)
  
+diff --git a/main.c b/main.c
+index f0f24a6..c7a6b86 100644
+--- a/main.c
++++ b/main.c
+@@ -994,10 +994,14 @@ rpl_stat (fuse_req_t req, struct ovl_node *node, int fd, const char *path, struc
+ }
+ 
+ static void
+-node_mark_all_free (void *p)
++node_mark_all_free (void *p,struct hash_table *visited)
+ {
+   struct ovl_node *it, *n = (struct ovl_node *) p;
+-
++  if (hash_lookup(visited, n)) {
++    return;
++  }
++  hash_insert(visited, n);
++  
+   for (it = n->next_link; it; it = it->next_link)
+     it->ino->lookups = 0;
+ 
+@@ -1006,7 +1010,7 @@ node_mark_all_free (void *p)
+   if (n->children)
+     {
+       for (it = hash_get_first (n->children); it; it = hash_get_next (n->children, it))
+-        node_mark_all_free (it);
++        node_mark_all_free (it, visited);
+     }
+ }
+ 
+@@ -5977,7 +5981,12 @@ err_out1:
+   for (tmp_layer = lo.layers; tmp_layer; tmp_layer = tmp_layer->next)
+     tmp_layer->ds->cleanup (tmp_layer);
+ 
+-  node_mark_all_free (lo.root);
++  struct hash_table *visited = hash_initialize(2048, NULL, NULL, NULL, NULL);
++  if(!visited){
++    error (EXIT_FAILURE, errno, "hash table initialize");
++  }
++  node_mark_all_free (lo.root,visited);
++  hash_free (visited);
+ 
+   hash_free (lo.inodes);
+ 

@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/System233/ll-killer-go/config"
 	"github.com/System233/ll-killer-go/pty"
 	"github.com/System233/ll-killer-go/reexec"
 	"github.com/System233/ll-killer-go/utils"
@@ -176,6 +175,10 @@ func PivotRootSystem() error {
 	if err := syscall.PivotRoot(ExecFlag.RootFS, oldRootFS); err != nil {
 		return err
 	}
+	defer func() {
+		err := syscall.PivotRoot(ExecFlag.RootFS, oldRootFS)
+		utils.Debug("PivotRoot.Post", ExecFlag.RootFS, oldRootFS, err)
+	}()
 	return ExecShell()
 }
 
@@ -204,7 +207,7 @@ func MountFileSystem() error {
 	if err := utils.RemountProc(); err != nil {
 		return err
 	}
-	isFuseOverlayFs := false
+	isFuse := false
 	for _, mount := range ExecFlag.Mounts {
 		opt := utils.ParseMountOption(mount)
 		err := opt.Mount()
@@ -214,9 +217,10 @@ func MountFileSystem() error {
 			}
 			log.Println(err)
 		}
-		if opt.FSType == config.FuseOverlayFSType {
-			isFuseOverlayFs = true
+		if opt.IsFuse() {
+			isFuse = true
 		}
+		defer opt.Unmount()
 	}
 
 	if ExecFlag.RootFS != "" {
@@ -226,16 +230,16 @@ func MountFileSystem() error {
 			return err
 		}
 
-		if isFuseOverlayFs {
+		if isFuse {
 			err = utils.SwitchTo("PivotRootSystem", &utils.SwitchFlags{Cloneflags: syscall.CLONE_NEWNS})
 			if err != nil {
 				return err
 			}
 		} else {
-			PivotRootSystem()
+			return PivotRootSystem()
 		}
 	} else {
-		ExecShell()
+		return ExecShell()
 	}
 	return nil
 }
