@@ -1,4 +1,16 @@
 
+<a name="v1.4.24"></a>
+## [v1.4.24](https://github.com/System233/ll-killer-go/compare/v1.4.23...v1.4.24) (2025-03-20)
+
+### 新增功能
+
+* make中添加rebuild、ldd-check、ldd-search和check任务，详情查看make help
+
+### 错误修复
+
+* 调整fast模式下ldd-check的搜索范围
+
+
 <a name="v1.4.23"></a>
 ## [v1.4.23](https://github.com/System233/ll-killer-go/compare/v1.4.21...v1.4.23) (2025-03-20)
 
