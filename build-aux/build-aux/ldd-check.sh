@@ -3,7 +3,13 @@ MODE=$1
 TMP_DIR=$(mktemp -d ll-killer.XXXXXX -p /tmp)
 TMP_FILE="$TMP_DIR/soname.list"
 DIR_LIST="/opt /usr /lib /bin /runtime"
-if [ "$MODE" = "fast" ];then
+if [ "$KILLER_PACKER" = "1" ];then
+    if [ "$MODE" = "fast" ];then
+        DIR_LIST="linglong/filesystem/diff"
+    else
+        DIR_LIST="/opt /usr /lib /bin /runtime"
+    fi
+else
     DIR_LIST="/opt/apps/${LINGLONG_APPID}/files"
 fi
 find $DIR_LIST -name "*.so*" | xargs -rn1 basename | sort -u >$TMP_FILE

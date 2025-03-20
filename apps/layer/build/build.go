@@ -184,10 +184,6 @@ func RunPostSetup(workDir string) error {
 }
 
 func BuildLayer() error {
-	killerPackerEnv := os.Getenv(config.KillerPackerEnv)
-	if killerPackerEnv == "" {
-		os.Setenv(config.KillerPackerEnv, "1")
-	}
 	log.Println("[准备构建环境]")
 
 	if err := utils.RemountProc(); err != nil {

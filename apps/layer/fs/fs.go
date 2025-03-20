@@ -166,6 +166,7 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 	os.Setenv("LINGLONG_APPID", configID)
 	os.Setenv("PREFIX", path.Join("/opt/apps", configID, "files"))
 	os.Setenv("TRIPLET", layer.GetTriplet())
+	os.Setenv(config.KillerPackerEnv, "1")
 	return nil
 }
 
@@ -177,7 +178,7 @@ func PostFilesystem() error {
 	}
 	return nil
 }
-func Run(opt SetupFilesystemOption,args...string)error{
+func Run(opt SetupFilesystemOption, args ...string) error {
 	err := SetupFilesystem(opt)
 	if err != nil {
 		return err
