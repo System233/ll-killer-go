@@ -25,10 +25,12 @@ import (
 var publicKeyData string
 
 const (
-	latestURL       = "/releases/latest"
-	githubAPIURL    = "https://api.github.com/repos/" + config.Repo
-	killerMirrorURL = "https://ll-killer.win"
-	SHA256SUMS      = "SHA256SUMS"
+	latestURL          = "/releases/latest"
+	githubURL          = "https://github.com/" + config.Repo
+	githubAPIURL       = "https://api.github.com/repos/" + config.Repo
+	killerMirrorURL    = "https://ll-killer.win"
+	killerMirrorAPIURL = "https://ll-killer.win/api"
+	SHA256SUMS         = "SHA256SUMS"
 )
 
 type ReleaseInfo struct {
@@ -94,14 +96,14 @@ func verifyData(dataReader io.Reader, signatureReader io.Reader) error {
 
 	return nil
 }
-func fetchLatestSHA256(ctx context.Context, base string, tag string) (map[string]string, error) {
-	hashURL := fmt.Sprintf("%s/releases/download/%s/%s", base, tag, SHA256SUMS)
-	hashAscURL := fmt.Sprint(hashURL, ".asc")
-	hashData, err := fetch(ctx, hashURL)
+func fetchLatestSHA256(ctx context.Context, downloadURL string, tag string) (map[string]string, error) {
+	hashDownloadURL := fmt.Sprintf("%s/releases/download/%s/%s", downloadURL, tag, SHA256SUMS)
+	hashAscDownloadURL := fmt.Sprint(hashDownloadURL, ".asc")
+	hashData, err := fetch(ctx, hashDownloadURL)
 	if err != nil {
 		return nil, err
 	}
-	ascData, err := fetch(ctx, hashAscURL)
+	ascData, err := fetch(ctx, hashAscDownloadURL)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +125,8 @@ func fetchLatestSHA256(ctx context.Context, base string, tag string) (map[string
 	return result, nil
 }
 
-func fetchRelease(ctx context.Context, base string, note string, ch chan<- *UpdateInfo, errCh chan<- error) {
-	targetURL := fmt.Sprint(base, "/releases/latest")
+func fetchRelease(ctx context.Context, downloadURL string, apiURL string, note string, ch chan<- *UpdateInfo, errCh chan<- error) {
+	targetURL := fmt.Sprint(apiURL, "/releases/latest")
 	utils.Debug("fetchRelease", targetURL)
 	resp, err := fetch(ctx, targetURL)
 	if err != nil {
@@ -138,7 +140,7 @@ func fetchRelease(ctx context.Context, base string, note string, ch chan<- *Upda
 		return
 	}
 
-	hashmap, err := fetchLatestSHA256(ctx, base, release.TagName)
+	hashmap, err := fetchLatestSHA256(ctx, downloadURL, release.TagName)
 	if err != nil {
 		errCh <- err
 		return
@@ -150,7 +152,7 @@ func fetchRelease(ctx context.Context, base string, note string, ch chan<- *Upda
 			continue
 		}
 		assets = append(assets, UpdateAsset{
-			URL:       fmt.Sprintf("%s/releases/download/%s/%s", base, release.TagName, asset.Name),
+			URL:       fmt.Sprintf("%s/releases/download/%s/%s", downloadURL, release.TagName, asset.Name),
 			SHA256:    value,
 			Name:      asset.Name,
 			Size:      asset.Size,
@@ -171,8 +173,8 @@ func CheckForUpdate(duration time.Duration) (*UpdateInfo, error) {
 	ch := make(chan *UpdateInfo, 2)
 	errCh := make(chan error, 2)
 
-	go fetchRelease(ctx, githubAPIURL, "Github地址", ch, errCh)
-	go fetchRelease(ctx, killerMirrorURL, "镜像地址", ch, errCh)
+	go fetchRelease(ctx, githubURL, githubAPIURL, "Github地址", ch, errCh)
+	go fetchRelease(ctx, killerMirrorURL, killerMirrorAPIURL, "镜像地址", ch, errCh)
 
 	timeout := time.After(duration)
 	for i := 0; i < 2; i++ {
@@ -236,13 +238,14 @@ func Update(opt UpdateOption) error {
 	if err != nil {
 		return fmt.Errorf("无法获取可执行文件位置:%s", config.Variant)
 	}
+	log.Printf("[%s 更新内容]\n%s", info.Tag, info.Body)
 	log.Println("检测到新版本：", info.Tag)
 	log.Println("当前版本:", config.Tag)
 	log.Println("更新位置:", target)
 	log.Println("文件名:  ", asset.Name)
 	log.Println("原始地址:", asset.OriginURL)
 	log.Printf("下载地址: %s (%s)", asset.URL, info.Note)
-	log.Println("SHA-256: ", asset.SHA256)
+	log.Printf("SHA-256: %s (已通过GPG签名验证)", asset.SHA256)
 	log.Println("大小: ", fmt.Sprintf("%d (%.2fMiB)", asset.Size, float64(asset.Size)/(1024*1024)))
 	if !opt.Yes {
 		var input string

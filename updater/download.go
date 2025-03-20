@@ -59,7 +59,7 @@ func DownloadFile(ctx context.Context, url, filepath string, hash string) error 
 	log.Println("\n下载完成:", filepath)
 
 	calculatedSHA256 := hex.EncodeToString(hasher.Sum(nil))
-	fmt.Printf("计算的 SHA-256: %s\n", calculatedSHA256)
+	fmt.Printf("下载的SHA-256: %s\n", calculatedSHA256)
 
 	if hash != "" {
 		if calculatedSHA256 == hash {
