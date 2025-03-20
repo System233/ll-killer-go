@@ -15,6 +15,7 @@ echo "[复制必要文件]"
 test -e "build-aux/fuse-overlayfs" && cp -avf "build-aux/fuse-overlayfs" "$PREFIX"
 cp -avf "$KILLER_EXEC" "$PREFIX/ll-killer"
 cp -avf "build-aux/$ENTRYPOINT_NAME" "$PREFIX"
+chmod +xr "$PREFIX/ll-killer" "build-aux/$ENTRYPOINT_NAME"
 
 echo "[调整文件布局]"
 if [ -e "$PREFIX/share" ]; then
