@@ -1,4 +1,18 @@
 
+<a name="v1.4.29"></a>
+## [v1.4.29](https://github.com/System233/ll-killer-go/compare/v1.4.28...v1.4.29) (2025-03-21)
+
+### 兼容性更改
+
+* 默认关闭ptrace以加速构建，如apt安装时出现chown相关错误，再使用ENABLE_PTRACE=1启用
+
+### 错误修复
+
+* config.mk中保存ENABLE_RM_DESKTOP的配置
+* 允许通过make config修改配置
+* 修复ll-builder下不认本地自定义脚本
+
+
 <a name="v1.4.28"></a>
 ## [v1.4.28](https://github.com/System233/ll-killer-go/compare/v1.4.27...v1.4.28) (2025-03-21)
 
