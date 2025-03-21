@@ -438,9 +438,37 @@ func Dump(target string) error {
 	return header.PrintAll()
 }
 
+/*
+解析规则：
+* 若是deb版本号格式，去除epoch部分，其余4个部分，每个部分取其中首次出现的数字，如果存在rev，upstream中取3个部分，rev作为最后一个部分，数量不全的部分尾部补0；
+* 若是其他格式，按点号分割为4个部分，移除其中所有的非数字内容；
+* 若某个部分没有数字，则补0；
+* 若数字有前导0，删除前导0；
+* 删除所有空格；
+*/
 func NormalizeVersion(version string) string {
 	re := regexp.MustCompile(`\D`)
-	chunks := strings.SplitN(version, ".", 4)
+	findFirstNumeric := regexp.MustCompile(`\d+`)
+	versionPattern := regexp.MustCompile(`^(?:(\d+):)?([0-9][A-Za-z0-9.+-~]*?)(?:-([A-Za-z0-9.+~]*))?$`)
+	match := versionPattern.FindStringSubmatch(version)
+	var chunks []string
+	if match != nil {
+		if match[3] != "" {
+			chunks = strings.SplitN(match[2], ".", 3)
+			for range 3 - len(chunks) {
+				chunks = append(chunks, "0")
+			}
+			chunks = append(chunks, match[3])
+		} else {
+			chunks = strings.SplitN(match[2], ".", 4)
+		}
+		for index, chunk := range chunks {
+			version := findFirstNumeric.FindString(chunk)
+			chunks[index] = version
+		}
+	} else {
+		chunks = strings.SplitN(version, ".", 4)
+	}
 	for index, chunk := range chunks {
 		version := strings.TrimLeft(strings.TrimSpace(re.ReplaceAllString(chunk, "")), "0")
 		if version == "" {
@@ -451,5 +479,5 @@ func NormalizeVersion(version string) string {
 	for len(chunks) < 4 {
 		chunks = append(chunks, "0")
 	}
-	return strings.Join(chunks, ".")
+	return strings.Join(chunks[0:4], ".")
 }
