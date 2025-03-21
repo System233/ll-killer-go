@@ -11,13 +11,15 @@ ifneq ($(wildcard $(CONFIG_TARGET)),)
 endif
 
 PKG ?= app
-APPID ?= $(if $(filter ./%,$(PKG)),$(shell dpkg-deb -f $(PKG) Package),$(PKG)).linyaps
+PKGID ?= $(if $(filter ./%,$(PKG)),$(shell dpkg-deb -f $(PKG) Package),$(PKG))
+APPID ?= $(PKGID).linyaps
 
 KILLER ?= $(if $(wildcard ll-killer),./ll-killer,ll-killer)
 BUILD_ARGS ?=
 CREATE_ARGS ?=
 ENABLE_LDD_CHECK ?= 1
 ENABLE_INSTALL ?=1
+ENABLE_RM_DESKTOP ?= $(ENABLE_INSTALL)
 ENABLE_PTRACE ?=1
 ENABLE_OSTREE ?=0
 LDD_CHECK_MODE ?= fast
@@ -26,6 +28,7 @@ FILTER_LIST ?= NoDisplay Hidden
 SOURCES_LIST = sources.list
 UPDATE_TARGET ?= apt-update.log
 INSTALL_TARGET ?= apt-install.log
+RM_DESKTOP_TARGET ?= rm-desktop.log
 BUILD_TARGET ?= build.log
 POST_BUILD_TARGET ?= post-build.log
 PKG_INFO ?= pkg.info
@@ -87,9 +90,14 @@ else
 endif
 
 ifeq ($(ENABLE_LDD_CHECK),1)
-	LAYER_DEP := $(LDD_INSTALL_TARGET)
+	BUILD_RESULT_TARGET := $(LDD_INSTALL_TARGET)
 else
-	LAYER_DEP := $(INSTALL_DEP)
+	BUILD_RESULT_TARGET := $(INSTALL_DEP)
+endif
+
+LAYER_DEP := $(BUILD_RESULT_TARGET)
+ifeq ($(ENABLE_RM_DESKTOP),1)
+	LAYER_DEP += $(RM_DESKTOP_TARGET)
 endif
 
 KILLER_BUILD_ARGS = $(BUILD_ARGS) $(OSTREE_BUILD_ARGS)
@@ -170,7 +178,12 @@ $(POST_BUILD_TARGET): $(INSTALL_DEP) $(EXTRA_POST_BUILD)
 
 $(LDD_CHECK_TARGET):  $(INSTALL_DEP) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
-	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) > $(LDD_CHECK_TARGET)~
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) $(APPEND_LOG)
+	$(MOVE_LOG)
+
+$(RM_DESKTOP_TARGET): $(BUILD_RESULT_TARGET)
+	@echo "[删除不属于主包的快捷方式]"
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/rm-desktop.sh $(PKGID) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 .INTERMEDIATE: ldd_search
@@ -205,14 +218,17 @@ clean: clean-fs
 clean-all: clean clean-apt clean-ll
 	rm $(CONFIG_TARGET)
 ldd-check:
-	rm $(LDD_CHECK_TARGET)
+	rm -f $(LDD_CHECK_TARGET)
 	make --no-print-directory $(LDD_CHECK_TARGET)
 ldd-search:
-	rm $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET)
+	rm -f $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET)
 	make --no-print-directory ldd_search
 rebuild: $(YAML_CONFIG)
 	touch $(YAML_CONFIG)
 	make --no-print-directory layer
+rm-desktop: $(YAML_CONFIG)
+	rm -f $(RM_DESKTOP_TARGET)
+	make --no-print-directory $(RM_DESKTOP_TARGET)
 check: ldd-check ldd-search
 	make --no-print-directory $(LDD_INSTALL_TARGET)
 test-dynamic: $(LAYER_NAME)
@@ -236,7 +252,8 @@ help:
 	@echo "    rebuild       重新构建layer文件"
 	@echo "    ldd-check     检查缺失依赖库"
 	@echo "    ldd-search    搜索缺失依赖库"
-	@echo "    check    	 检查搜索并安装缺失依赖库"
+	@echo "    check         检查搜索并安装缺失依赖库"
+	@echo "    rm-desktop    删除不属于主包的快捷方式"
 	@echo "    install       安装主包和额外依赖到构建环境"
 	@echo "    layer         构建layer文件"
 	@echo "    clean         清除生成的文件、测试输出和layer"
@@ -256,6 +273,7 @@ help:
 	@echo "    ENABLE_PTRACE=0|1        是否启用ptrace ($(ENABLE_PTRACE))"
 	@echo "    ENABLE_INSTALL=0|1       是否启用自动安装依赖 ($(ENABLE_INSTALL))"
 	@echo "    ENABLE_OSTREE=0|1        是否启用自定义ostree仓库，彻底移除ll-builder依赖 ($(ENABLE_OSTREE))"
+	@echo "    ENABLE_RM_DESKTOP=0|1    是否自动删除不属于主包的快捷方式 ($(ENABLE_RM_DESKTOP))"
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"
@@ -305,5 +323,5 @@ layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
 all: layer
 
-.PHONY: all build config init ldd-check ldd-search check update install layer layer-dynamic clean clean-all clean-apt clean-ll clean-fs help test test-dynamic
+.PHONY: all build rm-desktop config init ldd-check ldd-search check update install layer layer-dynamic clean clean-all clean-apt clean-ll clean-fs help test test-dynamic
 .DEFAULT_GOAL := all 
