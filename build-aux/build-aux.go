@@ -32,7 +32,7 @@ func ExtractEmbedFilesToDisk(destDir string, force bool) error {
 
 		if !d.IsDir() {
 			if !force && utils.IsExist(destPath) {
-				log.Println("skip:", destPath)
+				utils.Debug("跳过", destPath)
 				return nil
 			}
 			srcFile, err := content.Open(path)
@@ -45,7 +45,7 @@ func ExtractEmbedFilesToDisk(destDir string, force bool) error {
 				return err
 			}
 
-			log.Println("created:", destPath)
+			log.Println("已创建:", destPath)
 		} else {
 			err = os.MkdirAll(destPath, 0755)
 			if err != nil {
@@ -60,18 +60,18 @@ func ExtractEmbedFilesToDisk(destDir string, force bool) error {
 	err = utils.CopySymlink("Makefile", "build-aux/Makefile", force)
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {
-			log.Println("skip:", "Makefile")
+			utils.Debug("跳过", "Makefile")
 			return nil
 		}
 		return err
 	}
-	log.Println("created:", "Makefile")
+	log.Println("已创建:", "Makefile")
 	return nil
 }
 
 func ExtractKillerExec(target string, force bool) error {
 	if !force && utils.IsExist(config.KillerExec) {
-		log.Println("skip:", target)
+		utils.Debug("跳过", target)
 		return nil
 	}
 	self, err := os.Executable()
@@ -83,14 +83,14 @@ func ExtractKillerExec(target string, force bool) error {
 		return err
 	}
 	if isSame {
-		log.Println("skip same:", target)
+		utils.Debug("跳过相同", target)
 		return nil
 	}
 	err = utils.CopyFileIO(reexec.Self(), target)
 	if err != nil {
 		return err
 	}
-	log.Println("created:", target)
+	log.Println("已创建:", target)
 	return nil
 }
 func ExtractBuildAuxFiles(force bool) error {
