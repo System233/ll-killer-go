@@ -45,8 +45,10 @@ if [ "${KILLER_PACKER:-0}" == "0" ]; then
     find $PREFIX/share -xtype l -exec "relink.sh" "{}" \;
 fi
 
-echo "[配置快捷方式]"
-find $PREFIX/share/applications -name "*.desktop" -exec "setup-desktop.sh" "{}" \;
+if [ -d "$PREFIX/share/applications" ]; then
+    echo "[配置快捷方式]"
+    find "$PREFIX/share/applications" -name "*.desktop" -exec "setup-desktop.sh" "{}" \;
+fi
 
 if [ -d "$PREFIX/share/applications/context-menus" ]; then
     echo "[配置右键菜单]"
