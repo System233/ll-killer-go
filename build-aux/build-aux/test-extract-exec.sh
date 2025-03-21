@@ -11,5 +11,5 @@ FILTER=$(printf "%s\s*=\s*true\n" "${FILTER_LIST[@]}"|paste -sd '|')
 awk -v RS='\n\\[Desktop Entry\\]' "
     /${FILTER}/ { next }
     match(\$0, /\nExec=([^\n]*)/, exec) { print exec[1] }
-" $(find "${SHARE_DIR}/applications" -name "*.desktop") >"$OUTPUT"
+" $(find "${SHARE_DIR}/applications" -name "*.desktop") | sed -E -e "s:['\"]?%[fFuUdDNcik]['\"]?::g" >"$OUTPUT"
 
