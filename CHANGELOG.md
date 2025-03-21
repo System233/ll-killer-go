@@ -1,4 +1,12 @@
 
+<a name="v1.4.28"></a>
+## [v1.4.28](https://github.com/System233/ll-killer-go/compare/v1.4.27...v1.4.28) (2025-03-21)
+
+### 代码重构
+
+* 更新版本号解析规则
+
+
 <a name="v1.4.27"></a>
 ## [v1.4.27](https://github.com/System233/ll-killer-go/compare/v1.4.26...v1.4.27) (2025-03-21)
 
