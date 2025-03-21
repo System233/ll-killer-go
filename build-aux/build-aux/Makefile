@@ -109,7 +109,7 @@ ifeq ($(ENABLE_PTRACE),1)
 	KILLER_BUILD_ARGS += --ptrace
 endif
 
-$(CONFIG_TARGET):
+config:
 	@echo "PKG ?= $(PKG)" > $(CONFIG_TARGET)
 	@echo "APPID ?= $(APPID)" >> $(CONFIG_TARGET)
 	@echo "KILLER_EXEC ?= $(KILLER_EXEC)" >> $(CONFIG_TARGET)
@@ -135,6 +135,9 @@ $(CONFIG_TARGET):
 	@echo "LDD_SEARCH_TARGET ?= $(LDD_SEARCH_TARGET)" >> $(CONFIG_TARGET)
 	@echo "LDD_INSTALL_TARGET ?= $(LDD_INSTALL_TARGET)" >> $(CONFIG_TARGET)
 	
+
+$(CONFIG_TARGET): 
+	$(MAKE) --no-print-directory $(MAKEOVERRIDES) config 
 
 $(SOURCES_LIST):
 	@echo "[从主机复制sources.list]"
@@ -317,7 +320,6 @@ help:
 init: $(YAML_CONFIG)
 update: $(UPDATE_TARGET)
 install: $(BUILD_TARGET)
-config: $(CONFIG_TARGET)
 layer-dynamic: $(LAYER_NAME)
 layer: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory layer-dynamic
