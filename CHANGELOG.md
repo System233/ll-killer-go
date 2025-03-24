@@ -1,4 +1,12 @@
 
+<a name="v1.4.31"></a>
+## [v1.4.31](https://github.com/System233/ll-killer-go/compare/v1.4.30...v1.4.31) (2025-03-24)
+
+### 错误修复
+
+* 修复layer build/exec使用自定义rootfs时，忽略符号链接绑定到符号链接的错误
+
+
 <a name="v1.4.30"></a>
 ## [v1.4.30](https://github.com/System233/ll-killer-go/compare/v1.4.29...v1.4.30) (2025-03-24)
 
