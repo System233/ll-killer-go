@@ -1,4 +1,12 @@
 
+<a name="v1.4.30"></a>
+## [v1.4.30](https://github.com/System233/ll-killer-go/compare/v1.4.29...v1.4.30) (2025-03-24)
+
+### 错误修复
+
+* 修复layer exec自定义rootfs下，某些base使用/run/systemd/resolve进行DNS解析的问题。
+
+
 <a name="v1.4.29"></a>
 ## [v1.4.29](https://github.com/System233/ll-killer-go/compare/v1.4.28...v1.4.29) (2025-03-21)
 
