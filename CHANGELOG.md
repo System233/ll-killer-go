@@ -1,4 +1,12 @@
 
+<a name="v1.4.33"></a>
+## [v1.4.33](https://github.com/System233/ll-killer-go/compare/v1.4.32...v1.4.33) (2025-03-24)
+
+### 错误修复
+
+* 修复玲珑1.5.x自动化测试无法写入tasks.log的问题
+
+
 <a name="v1.4.32"></a>
 ## [v1.4.32](https://github.com/System233/ll-killer-go/compare/v1.4.31...v1.4.32) (2025-03-24)
 
