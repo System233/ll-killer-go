@@ -86,6 +86,10 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 			FSType: "tmpfs",
 		},
 		{
+			Source: "/run/systemd",
+			Target: path.Join(rootfsPath, "run/systemd"),
+		},
+		{
 			Source: "/etc/resolv.conf",
 			Target: path.Join(rootfsPath, "etc/resolv.conf"),
 		},
@@ -100,10 +104,6 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 		{
 			Source: "/etc/machine-id",
 			Target: path.Join(rootfsPath, "etc/machine-id"),
-		},
-		{
-			Source: "/run/systemd",
-			Target: path.Join(rootfsPath, "run/systemd"),
 		},
 	}); err != nil {
 		return fmt.Errorf("挂载主机配置文件失败:%v", err)
