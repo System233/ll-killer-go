@@ -281,11 +281,11 @@ func MountBind(source string, target string, flags int) error {
 			}
 		}
 	}
-	flags |= syscall.MS_BIND | syscall.MS_PRIVATE
+	flags |= unix.MS_BIND | unix.MS_PRIVATE
 	if srcInfo.IsDir() {
-		flags |= syscall.MS_REC
+		flags |= unix.MS_REC
 	}
-	err = syscall.Mount(source, target, "none", uintptr(flags), "")
+	err = unix.Mount(source, target, "none", uintptr(flags), "")
 	if err != nil {
 		return fmt.Errorf("mount:%s->%s(%#x):%w", source, target, flags, err)
 	}

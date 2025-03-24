@@ -81,6 +81,11 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 
 	if err := utils.MountAll([]utils.MountOption{
 		{
+			Source: "tmpfs",
+			Target: path.Join(rootfsPath, "run"),
+			FSType: "tmpfs",
+		},
+		{
 			Source: "/etc/resolv.conf",
 			Target: path.Join(rootfsPath, "etc/resolv.conf"),
 		},
@@ -95,27 +100,27 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 		{
 			Source: "/etc/machine-id",
 			Target: path.Join(rootfsPath, "etc/machine-id"),
-		}}); err != nil {
+		},
+		{
+			Source: "/run/systemd",
+			Target: path.Join(rootfsPath, "run/systemd"),
+		},
+	}); err != nil {
 		return fmt.Errorf("挂载主机配置文件失败:%v", err)
 	}
 
 	if err := utils.MountAll([]utils.MountOption{
-		{
-			Source: "tmpfs",
-			Target: path.Join(rootfsPath, "run"),
-			FSType: "tmpfs",
-		},
 		{
 			Source: ".",
 			Target: path.Join(rootfsPath, "project"),
 		},
 		{
 			Source: config.AptDataDir,
-			Target: path.Join(rootfsPath, "/var/lib/apt"),
+			Target: path.Join(rootfsPath, "var/lib/apt"),
 		},
 		{
 			Source: config.AptCacheDir,
-			Target: path.Join(rootfsPath, "/var/cache"),
+			Target: path.Join(rootfsPath, "var/cache"),
 		}}); err != nil {
 		return fmt.Errorf("挂载项目目录失败:%v", err)
 	}
