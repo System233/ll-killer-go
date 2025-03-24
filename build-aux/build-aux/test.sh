@@ -50,7 +50,7 @@ i=0
 echo "[正在测试启动项]"
 
 mkdir -p tests
-TASKLOG="tests/task.log"
+TASKLOG="$PWD/tests/task.log"
 ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG" "$FILTER_LIST"
 
 while read args; do
