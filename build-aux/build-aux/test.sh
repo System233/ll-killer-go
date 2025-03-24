@@ -28,9 +28,9 @@ if [ ! ${#NEEDS} -eq 0 ];then
 fi
 
 echo "正在测试: APPID=${APPID} LAYER=${LAYER}"
-LLCLI_VER=$(LANG=en ll-cli --version | grep -oP "version\s*\K.*")
+LLCLI_VER=$(apt-cache show linglong-bin|grep -oP "^Version:\s*\K.*"||LANG=en ll-cli --version | grep -oP "version\s*\K.*"||echo "0.0.0-unknown")
 SUDO=
-if dpkg --compare-versions "$LLCLI_VER" \>= "1.7.0"; then
+if dpkg --compare-versions "$LLCLI_VER" ge "1.7.0"; then
     echo "提示：玲珑1.7.x需要root权限进行安装卸载，将使用sudo执行安装卸载命令。"
     SUDO=sudo
 fi
