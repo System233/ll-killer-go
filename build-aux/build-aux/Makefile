@@ -22,6 +22,7 @@ ENABLE_INSTALL ?=1
 ENABLE_RM_DESKTOP ?= $(ENABLE_INSTALL)
 ENABLE_PTRACE ?=0
 ENABLE_OSTREE ?=0
+ENABLE_TEST_NOCLI ?=0
 LDD_CHECK_MODE ?= fast
 
 FILTER_LIST ?= NoDisplay Hidden
@@ -75,6 +76,11 @@ ifeq ($(ENABLE_OSTREE),1)
 
 	OSTREE_CREATE_ARGS = --no-build
 	OSTREE_BUILD_ARGS = --rootfs "$(OSTREE_BASE_DIR)" --runtime "$(OSTREE_RUNTIME_DIR)"
+
+ifeq ($(ENABLE_TEST_NOCLI),1)
+	TEST_ENV=LAYER="$(LAYER_NAME)" ROOTFS="$(OSTREE_BASE_DIR)" RUNTIME="$(OSTREE_RUNTIME_DIR)" LL_CLI_EXEC="build-aux/ll-cli.sh"
+endif
+
 endif
 
 ifeq ($(wildcard $(EXTRA_POST_BUILD)),)
@@ -119,6 +125,7 @@ config:
 	@echo "ENABLE_PTRACE ?= $(ENABLE_PTRACE)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_INSTALL ?= $(ENABLE_INSTALL)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_OSTREE ?= $(ENABLE_OSTREE)" >> $(CONFIG_TARGET)
+	@echo "ENABLE_TEST_NOCLI ?= $(ENABLE_TEST_NOCLI)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_RM_DESKTOP ?= $(ENABLE_RM_DESKTOP)" >> $(CONFIG_TARGET)
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
@@ -190,10 +197,7 @@ $(RM_DESKTOP_TARGET): $(BUILD_RESULT_TARGET)
 	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/rm-desktop.sh $(PKGID) $(APPEND_LOG)
 	$(MOVE_LOG)
 
-.INTERMEDIATE: ldd_search
-$(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET): ldd_search
-
-ldd_search: $(LDD_CHECK_TARGET) build-aux/ldd-search.sh
+$(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET): $(LDD_CHECK_TARGET) build-aux/ldd-search.sh
 	@echo "[搜索缺失库所在包]"
 	$(KILLER) apt -- build-aux/ldd-search.sh $(LDD_CHECK_TARGET) $(LDD_FOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)~
 	@mv -f $(LDD_FOUND_TARGET)~ $(LDD_FOUND_TARGET)
@@ -237,7 +241,7 @@ check: ldd-check ldd-search
 	make --no-print-directory $(LDD_INSTALL_TARGET)
 test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
-	build-aux/test.sh $(APPID) $(LAYER_NAME) "$(FILTER_LIST)" 2>&1 | tee test.log
+	$(TEST_ENV) build-aux/test.sh $(APPID) $(LAYER_NAME) "$(FILTER_LIST)" 2>&1 | tee test.log
 test: $(YAML_CONFIG)
 	@$(MAKE) --no-print-directory test-dynamic FILTER_LIST="$(FILTER_LIST)"
 
@@ -278,6 +282,7 @@ help:
 	@echo "    ENABLE_INSTALL=0|1       是否启用自动安装依赖 ($(ENABLE_INSTALL))"
 	@echo "    ENABLE_OSTREE=0|1        是否启用自定义ostree仓库，彻底移除ll-builder依赖 ($(ENABLE_OSTREE))"
 	@echo "    ENABLE_RM_DESKTOP=0|1    是否自动删除不属于主包的快捷方式 ($(ENABLE_RM_DESKTOP))"
+	@echo "    ENABLE_TEST_NOCLI=0|1    是否启用无ll-cli测试,需要先启用自定义OSTREE ($(ENABLE_TEST_NOCLI))"
 	@echo "    LDD_CHECK_MODE=fast|full 依赖检查模式 fast=快速/full=全量 ($(LDD_CHECK_MODE))"
 	@echo "    CREATE_ARGS=             传递给ll-killer create的额外参数 ($(CREATE_ARGS))"
 	@echo "    BUILD_ARGS=              传递给ll-killer build的额外参数 ($(BUILD_ARGS))"

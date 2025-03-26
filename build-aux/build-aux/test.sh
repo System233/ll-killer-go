@@ -4,11 +4,13 @@ set -e
 if [ "$#" -lt "2" ];then
     echo "错误：无效参数"
     echo "用法：$0 <应用APPID> <layer文件> [空格分隔排除列表: NoDisplay Hidden Terminal]"
+    echo "扩展环境变量: LL_CLI_EXEC"
     exit 1
 fi
 APPID="$1"
 LAYER="$2"
 FILTER_LIST="$3"
+LL_CLI_EXEC="${LL_CLI_EXEC:-$(which ll-cli)}"
 NEEDS=()
 function check_dep(){
     dep=$1
@@ -28,33 +30,34 @@ if [ ! ${#NEEDS} -eq 0 ];then
 fi
 
 echo "正在测试: APPID=${APPID} LAYER=${LAYER}"
-LLCLI_VER=$(apt-cache show linglong-bin|grep -oP "^Version:\s*\K.*"||LANG=en ll-cli --version | grep -oP "version\s*\K.*"||echo "0.0.0-unknown")
+LLCLI_VER=$(LANG=en $LL_CLI_EXEC --version | grep -oP "version\s*\K.*"||apt-cache show linglong-bin|grep -oP "^Version:\s*\K.*"||echo "0.0.0-unknown")
 SUDO=
 if dpkg --compare-versions "$LLCLI_VER" ge "1.7.0"; then
     echo "提示：玲珑1.7.x需要root权限进行安装卸载，将使用sudo执行安装卸载命令。"
     SUDO=sudo
 fi
 
-$SUDO ll-cli uninstall "$APPID" &>/dev/null ||true
-$SUDO ll-cli install "$LAYER"
+$SUDO $LL_CLI_EXEC uninstall "$APPID" &>/dev/null ||true
+$SUDO $LL_CLI_EXEC install "$LAYER"
 
 cleanup() {
-    $SUDO ll-cli uninstall "$APPID"
+    $SUDO $LL_CLI_EXEC uninstall "$APPID"
 }
 trap cleanup EXIT
 
 echo "[正在测试快捷方式/服务单元]"
-ll-cli run "${APPID}" -- "$(dirname $0)/test-desktop.sh" || true
+$LL_CLI_EXEC run "${APPID}" -- "$(dirname $0)/test-desktop.sh" || true
 
 i=0
 echo "[正在测试启动项]"
 
 mkdir -p tests
 TASKLOG="$PWD/tests/task.log"
-ll-cli run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG" "$FILTER_LIST"
+$LL_CLI_EXEC run "${APPID}" -- "$(dirname $0)/test-extract-exec.sh" "$TASKLOG" "$FILTER_LIST"
 
 while read args; do
     ARGS=($args)
+    ARGS[0]=$LL_CLI_EXEC
     KILLER_TEST_SCREENSHOT="tests/screen$i-%d.jpg" \
         KILLER_TEST_STDIO="tests/output-$i.log" \
         xvfb-run -a "$(dirname $0)/test-display.sh" \

@@ -40,9 +40,9 @@ APP_PID=$!
 
 log "进程已启动"
 for((i=0;i<${KILLER_TEST_TIMEOUT};++i));do
-    WIN_ID=$(xdotool search --onlyvisible ".*"  2>/dev/null | xargs -r -I{} xdotool getwindowpid {}  2>/dev/null)
-    if [ -n "$WIN_ID" ];then
-        log "已检测到窗口:WIN_ID=${WIN_ID}"
+    PID=$(xdotool search --onlyvisible ".*"  2>/dev/null | xargs -r -I{} xdotool getwindowpid {}  2>/dev/null|head -n1)
+    if [ -n "$PID" ];then
+        log "已检测到窗口:PID=${PID}"
         break
     fi
     step_check
