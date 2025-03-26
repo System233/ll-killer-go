@@ -260,7 +260,6 @@ func MountBind(source string, target string, flags int) error {
 			return err
 		}
 		Debug("Symlink", err)
-		return nil
 	}
 
 	if !IsExist(target) {

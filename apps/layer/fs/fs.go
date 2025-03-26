@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"syscall"
 
 	"github.com/System233/ll-killer-go/config"
@@ -45,15 +46,41 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 	configID := opt.Config.Package.ID
 	configBuild := opt.Config.Build
 	rootfsPath := path.Join(WorkDir, "rootfs")
+	overridePath := path.Join(WorkDir, "override")
+
+	if err := utils.MountAll([]utils.MountOption{
+		{
+			Source: "/etc/resolv.conf",
+			Target: path.Join(overridePath, "etc/resolv.conf"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
+		},
+		{
+			Source: "/etc/localtime",
+			Target: path.Join(overridePath, "etc/localtime"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
+		},
+		{
+			Source: "/etc/timezone",
+			Target: path.Join(overridePath, "etc/timezone"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
+		},
+		{
+			Source: "/etc/machine-id",
+			Target: path.Join(overridePath, "etc/machine-id"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
+		}}); err != nil {
+		return fmt.Errorf("挂载覆盖文件系统失败:%v", err)
+	}
 
 	if err := utils.Mount(&utils.MountOption{
-		Source: opt.RootFs,
+		Source: strings.Join([]string{opt.RootFs, overridePath}, "+"),
 		Target: rootfsPath,
 		FSType: "merge",
 		Flags:  unix.MS_BIND | unix.MS_RDONLY,
 	}); err != nil {
 		return fmt.Errorf("挂载根目录失败:%v", err)
 	}
+
 	if err := utils.MountAll([]utils.MountOption{
 		{
 			Source: "/dev",
@@ -91,26 +118,6 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 		{
 			Source: "/run/systemd",
 			Target: path.Join(rootfsPath, "run/systemd"),
-		},
-		{
-			Source: "/etc/resolv.conf",
-			Target: path.Join(rootfsPath, "etc/resolv.conf"),
-			Flags:  unix.MS_BIND | unix.MS_RDONLY,
-		},
-		{
-			Source: "/etc/localtime",
-			Target: path.Join(rootfsPath, "etc/localtime"),
-			Flags:  unix.MS_BIND | unix.MS_RDONLY,
-		},
-		{
-			Source: "/etc/timezone",
-			Target: path.Join(rootfsPath, "etc/timezone"),
-			Flags:  unix.MS_BIND | unix.MS_RDONLY,
-		},
-		{
-			Source: "/etc/machine-id",
-			Target: path.Join(rootfsPath, "etc/machine-id"),
-			Flags:  unix.MS_BIND | unix.MS_RDONLY,
 		},
 	}); err != nil {
 		return fmt.Errorf("挂载主机配置文件失败:%v", err)
