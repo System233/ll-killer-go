@@ -1,4 +1,12 @@
 
+<a name="v1.4.36"></a>
+## [v1.4.36](https://github.com/System233/ll-killer-go/compare/v1.4.35...v1.4.36) (2025-03-26)
+
+### 错误修复
+
+* 修复某些情况下自定义base中DNS错误的问题
+
+
 <a name="v1.4.35"></a>
 ## [v1.4.35](https://github.com/System233/ll-killer-go/compare/v1.4.34...v1.4.35) (2025-03-26)
 
