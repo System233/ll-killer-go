@@ -46,37 +46,40 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 	configBuild := opt.Config.Build
 	rootfsPath := path.Join(WorkDir, "rootfs")
 
-	if err := utils.Mount(&utils.MountOption{Source: opt.RootFs, Target: rootfsPath, FSType: "merge", Flags: unix.MS_RDONLY}); err != nil {
+	if err := utils.Mount(&utils.MountOption{
+		Source: opt.RootFs,
+		Target: rootfsPath,
+		FSType: "merge",
+		Flags:  unix.MS_BIND | unix.MS_RDONLY,
+	}); err != nil {
 		return fmt.Errorf("挂载根目录失败:%v", err)
 	}
-	if opt.RootFs != "/" {
-		if err := utils.MountAll([]utils.MountOption{
-			{
-				Source: "/dev",
-				Target: path.Join(rootfsPath, "dev"),
-			},
-			{
-				Source: "/proc",
-				Target: path.Join(rootfsPath, "proc"),
-			},
-			{
-				Source: "/home",
-				Target: path.Join(rootfsPath, "home"),
-			},
-			{
-				Source: "/root",
-				Target: path.Join(rootfsPath, "root"),
-			},
-			{
-				Source: "/tmp",
-				Target: path.Join(rootfsPath, "tmp"),
-			},
-			{
-				Source: "/sys",
-				Target: path.Join(rootfsPath, "sys"),
-			}}); err != nil {
-			return fmt.Errorf("挂载主机文件系统失败:%v", err)
-		}
+	if err := utils.MountAll([]utils.MountOption{
+		{
+			Source: "/dev",
+			Target: path.Join(rootfsPath, "dev"),
+		},
+		{
+			Source: "/proc",
+			Target: path.Join(rootfsPath, "proc"),
+		},
+		{
+			Source: "/home",
+			Target: path.Join(rootfsPath, "home"),
+		},
+		{
+			Source: "/root",
+			Target: path.Join(rootfsPath, "root"),
+		},
+		{
+			Source: "/tmp",
+			Target: path.Join(rootfsPath, "tmp"),
+		},
+		{
+			Source: "/sys",
+			Target: path.Join(rootfsPath, "sys"),
+		}}); err != nil {
+		return fmt.Errorf("挂载主机文件系统失败:%v", err)
 	}
 
 	if err := utils.MountAll([]utils.MountOption{
@@ -92,18 +95,22 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 		{
 			Source: "/etc/resolv.conf",
 			Target: path.Join(rootfsPath, "etc/resolv.conf"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
 		},
 		{
 			Source: "/etc/localtime",
 			Target: path.Join(rootfsPath, "etc/localtime"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
 		},
 		{
 			Source: "/etc/timezone",
 			Target: path.Join(rootfsPath, "etc/timezone"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
 		},
 		{
 			Source: "/etc/machine-id",
 			Target: path.Join(rootfsPath, "etc/machine-id"),
+			Flags:  unix.MS_BIND | unix.MS_RDONLY,
 		},
 	}); err != nil {
 		return fmt.Errorf("挂载主机配置文件失败:%v", err)
@@ -160,7 +167,7 @@ func SetupFilesystem(opt SetupFilesystemOption) error {
 		return fmt.Errorf("写入entry.sh失败:%v", err)
 	}
 
-	if err := utils.MountBind(rootfsPath, rootfsPath, 0); err != nil {
+	if err := utils.MountBind(rootfsPath, rootfsPath, unix.MS_BIND|unix.MS_RDONLY); err != nil {
 		return fmt.Errorf("绑定根目录失败:%v", err)
 	}
 

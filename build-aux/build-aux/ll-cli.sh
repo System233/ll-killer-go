@@ -5,6 +5,11 @@ if [ "$CMD" == "--version" ];then
     echo "ll-cli.sh version 1.0.0"
     exit 0
 fi
+if [ "$CMD" == "--help" ];then
+    echo "玲珑青春版 - 本命令使用ll-killer模拟一个玲珑环境，用于替换ll-cli以加速测试过程。"
+    echo "使用LAYER,ROOTFS环境变量指定layer文件和base文件系统,RUNTIME指定runtime文件系统。"
+    exit 0
+fi
 if [ "$CMD" != "run" ];then
     echo "$0 忽略命令：$@"
     exit 0
@@ -15,11 +20,10 @@ LAYER=${LAYER:-$SEARCHED_LAYER}
 ROOTFS=${ROOTFS}
 RUNTIME=${RUNTIME}
 
-echo "CMD=$CMD"
-echo "PKG=$PKG"
-echo "LAYER=$LAYER"
-echo "ROOTFS=$ROOTFS"
-echo "RUNTIME=$RUNTIME"
+echo "包名:$PKG"
+echo "Layer文件:$LAYER"
+echo "Base文件系统:$ROOTFS"
+echo "Runtime文件系统:$RUNTIME"
 
 if [ ! -e "$LAYER" ];then
     echo "未正确设置LAYER变量:$LAYER"
@@ -59,24 +63,25 @@ LINGLONG_APPID=$PKG ll-killer exec \
     --mount "$RUNTIME:$MERGED_DIR/runtime" \
     --mount "tmpfs:$MERGED_DIR/run::tmpfs" \
     --mount "/run:$MERGED_DIR/run::merge: " \
-    --mount "/:$MERGED_DIR/run/host/rootfs:rbind" \
+    --mount "/:$MERGED_DIR/run/host/rootfs:rbind:rdonly+bind" \
+    --mount "/etc/resolv.conf:$MERGED_DIR/etc/resolv.conf:rdonly+bind" \
+    --mount "/etc/localtime:$MERGED_DIR/etc/localtime:rdonly+bind" \
+    --mount "/etc/machine-id:$MERGED_DIR/etc/machine-id:rdonly+bind" \
+    --mount "/etc/timezone:$MERGED_DIR/etc/timezone:rdonly+bind" \
+    --mount "/etc/passwd:$MERGED_DIR/etc/passwd:rdonly+bind" \
+    --mount "/etc/locale.conf:$MERGED_DIR/etc/locale.conf:rdonly+bind" \
+    --mount "/etc/default/locale:$MERGED_DIR/etc/default/locale:rdonly+bind" \
+    --mount "/usr/share/fonts:$MERGED_DIR/usr/share/fonts:rdonly+bind" \
+    --mount "/usr/share/locale:$MERGED_DIR/usr/share/locale:rdonly+bind" \
+    --mount "/usr/share/theme:$MERGED_DIR/usr/share/theme:rdonly+bind" \
+    --mount "/usr/share/icons:$MERGED_DIR/usr/share/icons:rdonly+bind" \
+    --mount "$MERGED_DIR:$MERGED_DIR:remount+rdonly" \
     --mount "/proc:$MERGED_DIR/proc:rbind" \
     --mount "/dev:$MERGED_DIR/dev:rbind" \
     --mount "/sys:$MERGED_DIR/sys:rbind" \
     --mount "/tmp:$MERGED_DIR/tmp:rbind" \
     --mount "/home:$MERGED_DIR/home:rbind" \
     --mount "/root:$MERGED_DIR/root:rbind" \
-    --mount "/etc/resolv.conf:$MERGED_DIR/etc/resolv.conf" \
-    --mount "/etc/localtime:$MERGED_DIR/etc/localtime" \
-    --mount "/etc/machine-id:$MERGED_DIR/etc/machine-id" \
-    --mount "/etc/timezone:$MERGED_DIR/etc/timezone" \
-    --mount "/etc/passwd:$MERGED_DIR/etc/passwd" \
-    --mount "/etc/locale.conf:$MERGED_DIR/etc/locale.conf" \
-    --mount "/etc/default/locale:$MERGED_DIR/etc/default/locale" \
-    --mount "/usr/share/fonts:$MERGED_DIR/usr/share/fonts" \
-    --mount "/usr/share/locale:$MERGED_DIR/usr/share/locale" \
-    --mount "/usr/share/theme:$MERGED_DIR/usr/share/theme" \
-    --mount "/usr/share/icons:$MERGED_DIR/usr/share/icons" \
     --rootfs "$MERGED_DIR" \
     --wait \
     -- $@

@@ -191,7 +191,6 @@ func Mount(opt *MountOption) error {
 		if err != nil {
 			return err
 		}
-
 		for mount, from := range filesystem {
 			if err = MountBind(from, mount, opt.Flags); err != nil {
 				return err
@@ -230,7 +229,7 @@ func Mount(opt *MountOption) error {
 			return err
 		}
 	}
-	return syscall.Mount(opt.Source, opt.Target, opt.FSType, uintptr(opt.Flags), opt.Data)
+	return unix.Mount(opt.Source, opt.Target, opt.FSType, uintptr(opt.Flags), opt.Data)
 }
 func MountBind(source string, target string, flags int) error {
 	Debug("MountBind", source, target, flags)
@@ -287,9 +286,16 @@ func MountBind(source string, target string, flags int) error {
 	if srcInfo.IsDir() {
 		flags |= unix.MS_REC
 	}
-	err = unix.Mount(source, target, "none", uintptr(flags), "")
+	Debug("Mount", source, target, flags)
+	err = unix.Mount(source, target, "bind", uintptr(flags), "")
 	if err != nil {
 		return fmt.Errorf("mount:%s->%s(%#x):%w", source, target, flags, err)
+	}
+	if flags&unix.MS_RDONLY != 0 && flags&unix.MS_REMOUNT == 0 {
+		err = unix.Mount(source, target, "bind", uintptr(flags|unix.MS_REMOUNT), "")
+		if err != nil {
+			return fmt.Errorf("remount:%s->%s(%#x):%w", source, target, flags, err)
+		}
 	}
 	return nil
 }
@@ -340,6 +346,7 @@ var MountFlagMap = map[string]int{
 	"posixacl":    syscall.MS_POSIXACL,
 	"private":     syscall.MS_PRIVATE,
 	"rdonly":      syscall.MS_RDONLY,
+	"ro":          syscall.MS_RDONLY,
 	"rec":         syscall.MS_REC,
 	"relatime":    syscall.MS_RELATIME,
 	"remount":     syscall.MS_REMOUNT,
@@ -414,6 +421,17 @@ func (opt *MountOption) buildFileSystem(sources []string, target string, filesys
 		for _, file := range files {
 			path := filepath.Join(target, file.Name())
 			current := filepath.Join(parent, file.Name())
+			skip := false
+			for _, prefix := range excludes {
+				if current == prefix {
+					Debug("mount.skip", current, target)
+					skip = true
+					break
+				}
+			}
+			if skip {
+				continue
+			}
 			if _, exists := conflicts[file.Name()]; exists {
 				continue
 			}
