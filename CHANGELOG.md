@@ -1,4 +1,12 @@
 
+<a name="v1.4.34"></a>
+## [v1.4.34](https://github.com/System233/ll-killer-go/compare/v1.4.33...v1.4.34) (2025-03-26)
+
+### 新增功能
+
+* 新增ENABLE_TEST_NOCLI选项，支持在不安装玲珑的情况下启动layer文件进行测试
+
+
 <a name="v1.4.33"></a>
 ## [v1.4.33](https://github.com/System233/ll-killer-go/compare/v1.4.32...v1.4.33) (2025-03-24)
 
