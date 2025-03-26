@@ -1,4 +1,12 @@
 
+<a name="v1.4.35"></a>
+## [v1.4.35](https://github.com/System233/ll-killer-go/compare/v1.4.34...v1.4.35) (2025-03-26)
+
+### 错误修复
+
+* 确保ll-cli.sh/layer exec环境为只读
+
+
 <a name="v1.4.34"></a>
 ## [v1.4.34](https://github.com/System233/ll-killer-go/compare/v1.4.33...v1.4.34) (2025-03-26)
 
