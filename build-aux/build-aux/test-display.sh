@@ -42,21 +42,25 @@ log "进程已启动"
 for((i=0;i<${KILLER_TEST_TIMEOUT};++i));do
     PID=$(xdotool search --onlyvisible ".*"  2>/dev/null | xargs -r -I{} xdotool getwindowpid {}  2>/dev/null|head -n1)
     if [ -n "$PID" ];then
-        log "已检测到窗口:PID=${PID}"
         break
     fi
     step_check
 done
 
-SECONDS=0
-step_time=0
-while test $SECONDS -lt $KILLER_TEST_SCREENSHOT_TOTAL;do
-    min_step=$((KILLER_TEST_SCREENSHOT_TOTAL-SECONDS))
-    sleep $((min_step<step_time?min_step:step_time))
-    take_shot
-    step_time=$((step_time>5?step_time:step_time+1))
-done
 step_check
+if [ -n "$PID" ];then
+    log "已检测到窗口:PID=${PID}"
+    SECONDS=0
+    step_time=0
+    while test $SECONDS -lt $KILLER_TEST_SCREENSHOT_TOTAL;do
+        min_step=$((KILLER_TEST_SCREENSHOT_TOTAL-SECONDS))
+        sleep $((min_step<step_time?min_step:step_time))
+        take_shot
+        step_time=$((step_time>5?step_time:step_time+1))
+    done
+else
+    log "等待超时，未能检测到窗口"
+fi
 log "正在通知并等待进程退出"
 kill $APP_PID 2>/dev/null
 KILL_OK=0
