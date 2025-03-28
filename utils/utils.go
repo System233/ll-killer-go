@@ -555,6 +555,7 @@ func SetupEnvVar() error {
 		return err
 	}
 	os.Setenv(config.KillerExecEnv, path)
+	os.Setenv("PROMPT_COMMAND", `PS1='\[\033[32m\]\u@\h\[\033[00m\]:\[\033[33m\]\w\[\033[36m\] (ll-killer)\[\033[0m\]\n\$ '`)
 	return nil
 }
 func CopyFileIO(src, dst string) error {
