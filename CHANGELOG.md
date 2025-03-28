@@ -1,4 +1,15 @@
 
+<a name="v1.4.37"></a>
+## [v1.4.37](https://github.com/System233/ll-killer-go/compare/v1.4.36...v1.4.37) (2025-03-28)
+
+### 错误修复
+
+* 修复当没有任何desktop文件时，测试程序无限等待
+* 测试阶段排除screensavers
+* 当没有检测到窗口时，避免截图。
+* 修复ostree存储管理相关错误
+
+
 <a name="v1.4.36"></a>
 ## [v1.4.36](https://github.com/System233/ll-killer-go/compare/v1.4.35...v1.4.36) (2025-03-26)
 
