@@ -6,4 +6,6 @@ chmod a+Xr -R "$PREFIX"
 rm -fv "$PREFIX/etc/resolv.conf" \
     "$PREFIX/etc/localtime" \
     "$PREFIX/etc/timezone" \
-    "$PREFIX/etc/machine-id"
+    "$PREFIX/etc/machine-id" \
+    "$PREFIX/usr/bin/xdg-open" \
+    "$PREFIX/usr/bin/xdg-email"
