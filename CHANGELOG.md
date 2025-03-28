@@ -1,4 +1,25 @@
 
+<a name="v1.5.0"></a>
+## [v1.5.0](https://github.com/System233/ll-killer-go/compare/v1.4.37...v1.5.0) (2025-03-28)
+
+### 代码重构
+
+* 允许自动化测试screensavers中的快捷方式
+
+### 兼容性更改
+
+* 默认启用ptrace，现已解决ptrace的性能问题
+
+### 新增功能
+
+* 添加killer环境指示器，shell将明确提示当前处于killer环境
+* ptrace现已支持seccomp，能够更高效得拦截容器中不支持的系统调用
+
+### 错误修复
+
+* 进程退出时停止pty中的信号转发
+
+
 <a name="v1.4.37"></a>
 ## [v1.4.37](https://github.com/System233/ll-killer-go/compare/v1.4.36...v1.4.37) (2025-03-28)
 
