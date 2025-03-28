@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const IsSupported = false
+const IsSupported = true
 
 func PtraceHandle(pid int, regs unix.PtraceRegs) error {
 	return nil

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"syscall"
 
@@ -18,16 +19,26 @@ import (
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
+
+	seccomp "github.com/seccomp/libseccomp-golang"
 )
 
 const PtraceCommandHelp = `
-此命令用于拦截并修正系统调用，当前仅处理chown调用。
+此命令用于拦截并忽略系统调用错误，默认处理chown/fchown/fchownat/lchown系统调用。
+
+seccomp模式下，可以忽略任意系统调用的错误（默认启用）。
+ptrace模式下，仅处理上述系统调用，且仅支持amd64/arm64/loong64架构，其他架构下无效。
 
 # 用法
 <program> ptrace -- 要处理的命令
 `
 
 const IsSupported = internal.IsSupported
+
+var Flag struct {
+	Seccomp bool
+	Syscall []string
+}
 
 func Ptrace(self string, args []string) error {
 	args = append([]string{self, "ptrace", "--"}, args...)
@@ -131,6 +142,22 @@ func HandlePtraceEvent(process *os.Process, pid int) error {
 		}
 	}
 }
+func SetupSeccomp(ctx *seccomp.ScmpFilter, filters []string) error {
+	ActIgnore := seccomp.ActErrno.SetReturnCode(0)
+
+	for _, name := range filters {
+		opcode, err := seccomp.GetSyscallFromName(name)
+		if err != nil {
+			utils.Debug("Seccomp: syscall not found", name)
+			continue
+		}
+		utils.Debug("Seccomp: AddRule ActIgnore", name, opcode)
+		if err := ctx.AddRule(opcode, ActIgnore); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func PtraceMain(cmd *cobra.Command, args []string) error {
 	utils.Debug("PtraceMain", args)
 	runtime.LockOSThread()
@@ -143,6 +170,63 @@ func PtraceMain(cmd *cobra.Command, args []string) error {
 	binary, err := exec.LookPath(args[0])
 	if err == nil {
 		args[0] = binary
+	}
+
+	if Flag.Seccomp {
+		ctx, err := seccomp.NewFilter(seccomp.ActAllow)
+		if err != nil {
+			return err
+		}
+		defer ctx.Release()
+
+		if err := SetupSeccomp(ctx, Flag.Syscall); err != nil {
+			return err
+		}
+
+		if err := ctx.Load(); err != nil {
+			return err
+		}
+
+		process, err := os.StartProcess(args[0], args, &os.ProcAttr{
+			Files: []*os.File{os.Stdin, os.Stdout, os.Stderr},
+			Env:   os.Environ(),
+		})
+		if err != nil {
+			return err
+		}
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan,
+			syscall.SIGWINCH,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGQUIT,
+			syscall.SIGHUP,
+			syscall.SIGUSR1,
+			syscall.SIGUSR2,
+			syscall.SIGCONT,
+		)
+		defer func() {
+			signal.Stop(sigChan)
+			close(sigChan)
+		}()
+		go func() {
+			for sig := range sigChan {
+				err := process.Signal(sig)
+				if err != nil {
+					utils.Debug("SignalError", err)
+				}
+			}
+		}()
+		status, err := process.Wait()
+		if err != nil {
+			return err
+		}
+		if status.ExitCode() != 0 {
+			return &utils.ExitStatus{
+				ExitCode: status.ExitCode(),
+			}
+		}
+		return nil
 	}
 
 	process, err := os.StartProcess(args[0], args, &os.ProcAttr{
@@ -172,6 +256,8 @@ func CreatePtraceCommand() *cobra.Command {
 			utils.ExitWith(PtraceMain(cmd, args))
 		},
 	}
+	cmd.Flags().BoolVar(&Flag.Seccomp, "seccomp", true, "使用seccomp而不是ptrace进行系统调用拦截")
+	cmd.Flags().StringSliceVar(&Flag.Syscall, "syscall", []string{"chown", "fchown", "fchownat", "lchown"}, "指定拦截/忽略的系统调用")
 
 	return cmd
 }

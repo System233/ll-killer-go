@@ -8,6 +8,7 @@ require (
 	github.com/containerd/console v1.0.4
 	github.com/moby/sys/reexec v0.1.0
 	github.com/moby/term v0.5.2
+	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.36.0

@@ -13,7 +13,7 @@ ARG XX_ALPINE_ARCH
 RUN --mount=type=cache,target=/var/cache/apk \
     xx-apk add --no-cache musl-dev gcc pkgconf
 RUN --mount=type=cache,target=/var/cache/apk \
-    xx-apk add --no-cache fuse3 fuse3-dev fuse3-static linux-headers
+    xx-apk add --no-cache fuse3 fuse3-dev fuse3-static linux-headers libseccomp-dev libseccomp-static
 ENV CGO_ENABLED=1
 WORKDIR /app
 COPY . /app
