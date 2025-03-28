@@ -1,4 +1,12 @@
 
+<a name="v1.5.1"></a>
+## [v1.5.1](https://github.com/System233/ll-killer-go/compare/v1.5.0...v1.5.1) (2025-03-29)
+
+### 错误修复
+
+* 自动删除xdg-open/xdg-email以避免覆盖玲珑内置的修改版xdg
+
+
 <a name="v1.5.0"></a>
 ## [v1.5.0](https://github.com/System233/ll-killer-go/compare/v1.4.37...v1.5.0) (2025-03-28)
 
