@@ -243,7 +243,7 @@ test-dynamic: $(LAYER_NAME)
 	@echo "[执行自动化测试]"
 	$(TEST_ENV) build-aux/test.sh $(APPID) $(LAYER_NAME) "$(FILTER_LIST)" 2>&1 | tee test.log
 test: $(YAML_CONFIG)
-	@$(MAKE) --no-print-directory test-dynamic FILTER_LIST="$(FILTER_LIST)"
+	@$(MAKE) --no-print-directory test-dynamic "FILTER_LIST=$(FILTER_LIST)"
 
 help:
 	@echo "  ll-killer - 基于Makefile的玲珑项目管理工具"
