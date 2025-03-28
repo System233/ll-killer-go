@@ -204,6 +204,10 @@ func (pty *Pty) Call(args *PtyExecArgs) (int, error) {
 			syscall.SIGUSR2, // 用户自定义信号 2
 			syscall.SIGCONT, // 继续执行信号（当进程被暂停后恢复）
 		)
+		defer func() {
+			signal.Stop(ch)
+			close(ch)
+		}()
 		go func() {
 			for sig := range ch {
 				if sig == syscall.SIGWINCH {
