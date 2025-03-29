@@ -1,4 +1,16 @@
 
+<a name="v1.5.2"></a>
+## [v1.5.2](https://github.com/System233/ll-killer-go/compare/v1.5.1...v1.5.2) (2025-03-29)
+
+### 新增功能
+
+* 允许使用format格式化输出layer或构建信息，移除专用的print-layer-name选项
+
+### 错误修复
+
+* 创建项目时对配置进行有效性验证
+
+
 <a name="v1.5.1"></a>
 ## [v1.5.1](https://github.com/System233/ll-killer-go/compare/v1.5.0...v1.5.1) (2025-03-29)
 
