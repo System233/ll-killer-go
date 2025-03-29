@@ -12,7 +12,7 @@ endif
 
 PKG ?= app
 PKGID ?= $(if $(filter ./%,$(PKG)),$(shell dpkg-deb -f $(PKG) Package),$(PKG))
-APPID ?= $(PKGID).linyaps
+APPID ?=  $(shell echo "$(PKGID)" | sed 's/[^a-zA-Z0-9._-]/_/g').linyaps
 
 KILLER ?= $(if $(wildcard ll-killer),./ll-killer,ll-killer)
 BUILD_ARGS ?=

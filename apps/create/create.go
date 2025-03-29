@@ -8,6 +8,7 @@ package _create
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -113,10 +114,10 @@ func SetupPackageMetadata(cmd *cobra.Command) error {
 				if err != nil {
 					return err
 				}
-				log.Println("created: ", config.SourceListFile)
+				log.Println("已创建: ", config.SourceListFile)
 			}
 		} else {
-			log.Println("skip: ", config.SourceListFile)
+			// log.Println("skip: ", config.SourceListFile)
 		}
 	}
 	return nil
@@ -178,6 +179,14 @@ func ParsePackageMetadata(stream io.Reader) (map[string]string, error) {
 
 func SetupProject(target string) error {
 	ConfigData.Command[0] = strings.ReplaceAll(ConfigData.Command[0], "<APPID>", ConfigData.Package.ID)
+	errorList := ConfigData.Verify()
+
+	if len(errorList) > 0 {
+		for _, err := range errorList {
+			log.Println("错误:", err)
+		}
+		return errors.New("配置验证失败")
+	}
 
 	err := utils.DumpYamlFile(config.LinglongYaml, ConfigData)
 	if err != nil {

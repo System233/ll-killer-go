@@ -141,6 +141,18 @@ func isValidArch(arch string) bool {
 
 var versionPartRegex = regexp.MustCompile(`^(0|[1-9]\d*)$`)
 
+func IsValidVersion(version string) bool {
+	parts := strings.Split(version, ".")
+	if len(parts) != 4 {
+		return false
+	}
+	for _, part := range parts {
+		if !versionPartRegex.MatchString(part) {
+			return false
+		}
+	}
+	return true
+}
 func IsValidComponentVersion(version string) bool {
 	parts := strings.Split(version, ".")
 	if len(parts) < 2 || len(parts) > 4 {
@@ -480,4 +492,31 @@ func NormalizeVersion(version string) string {
 		chunks = append(chunks, "0")
 	}
 	return strings.Join(chunks[0:4], ".")
+}
+
+func (c *Config) Verify() []string {
+	invalidCh := regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+	var errors []string
+	if c.Package.ID == "" {
+		errors = append(errors, "应用id不能为空")
+	}
+	if ch := invalidCh.FindString(c.Package.ID); ch != "" {
+		errors = append(errors, fmt.Sprintf("应用id中包含无效字符'%s'", ch))
+	}
+	if c.Package.Kind != "app" && c.Package.Kind != "runtime" {
+		errors = append(errors, "无效的kind:"+c.Package.Kind)
+	}
+	if c.Command == nil || len(c.Command) == 0 {
+		errors = append(errors, "无效的command:"+fmt.Sprint(c.Command))
+	}
+	if c.Base == "" {
+		errors = append(errors, "base不能为空")
+	}
+	if c.Version == "" {
+		errors = append(errors, "version不能为空")
+	}
+	if IsValidVersion(c.Version) {
+		errors = append(errors, "无效的version:"+fmt.Sprint(c.Version))
+	}
+	return errors
 }
