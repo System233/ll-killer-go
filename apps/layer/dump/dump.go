@@ -7,9 +7,13 @@
 package _dump
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"text/template"
+
 	"github.com/System233/ll-killer-go/layer"
 	"github.com/System233/ll-killer-go/utils"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +24,24 @@ var Flag struct {
 	ShowLayer  bool
 	ShowErofs  bool
 	ExecPath   string
+	Format     string
+	ShowJson   bool
 }
 
 func DumpMain(cmd *cobra.Command, args []string) error {
 	header, err := layer.NewLayerHeaderFromFile(Flag.Target)
 	if err != nil {
 		return err
+	}
+	if Flag.Format != "" {
+		t, err := template.New("format").Parse(Flag.Format)
+		if err != nil {
+			return fmt.Errorf("解析format失败:%v", err)
+		}
+		return t.Execute(os.Stdout, header)
+	}
+	if Flag.ShowJson {
+		return json.NewEncoder(os.Stdout).Encode(header)
 	}
 	if Flag.ShowHeader {
 		header.Print()
@@ -67,6 +83,8 @@ func CreateDumpCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&Flag.ShowLayer, "layer", "l", false, "显示Layer信息")
 	cmd.Flags().BoolVarP(&Flag.ShowErofs, "erofs", "e", false, "显示Erofs信息")
 	cmd.Flags().BoolVarP(&Flag.ShowAll, "all", "a", true, "显示全部信息")
+	cmd.Flags().BoolVarP(&Flag.ShowJson, "json", "j", false, "输出json")
+	cmd.Flags().StringVarP(&Flag.Format, "format", "f", "", "格式化输出，字段详见json")
 	cmd.Flags().StringVar(&Flag.ExecPath, "exec", layer.DumpErofs, "指定dump.erofs命令的路径")
 	cmd.Flags().SortFlags = false
 	return cmd

@@ -49,7 +49,7 @@ APPEND_LOG = 2>&1 | tee $@~
 MOVE_LOG = @mv -f $@~ $@
 
 ifeq ($(wildcard $(YAML_CONFIG)),$(YAML_CONFIG))
-	LAYER_NAME := $(shell $(KILLER) layer build --print-layer-name)
+	LAYER_NAME := $(shell $(KILLER) layer build --print layer)
 else
 	LAYER_NAME := $(APPID).layer
 endif

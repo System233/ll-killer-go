@@ -47,6 +47,9 @@ func LoadJsonFile(file string, v interface{}) error {
 func DumpJsonData(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
+func DumpJsonDataIndent(v interface{}, indent string) ([]byte, error) {
+	return json.MarshalIndent(v, "", indent)
+}
 func DumpJsonFile(file string, v interface{}) error {
 	data, err := DumpJsonData(v)
 	if err != nil {

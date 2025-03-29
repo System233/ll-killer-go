@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"text/template"
 
 	"github.com/System233/ll-killer-go/apps/layer/fs"
 	"github.com/System233/ll-killer-go/config"
@@ -26,22 +27,22 @@ import (
 )
 
 var Flag struct {
-	RootFs         string
-	Runtime        string
-	Target         string
-	ExecPath       string
-	Compressor     string
-	BlockSize      int
-	Gid            int
-	Uid            int
-	NoPostSetup    bool
-	PrintJson      bool
-	PrintLayerName bool
-	Quiet          bool
-	Print          string
-	NoLayer        bool
-	PackArgs       []string
-	Args           []string
+	RootFs      string
+	Runtime     string
+	Target      string
+	ExecPath    string
+	Compressor  string
+	BlockSize   int
+	Gid         int
+	Uid         int
+	NoPostSetup bool
+	PrintJson   bool
+	Format      string
+	Quiet       bool
+	Print       string
+	NoLayer     bool
+	PackArgs    []string
+	Args        []string
 }
 
 const BuildCommandDescription = `无需ll-builder, 直接将当前项目构建为layer。
@@ -250,18 +251,15 @@ func GetBuildArgs() []string {
 	}
 	return args
 }
-func PrintLayerInfo(key string, json bool) error {
+func PrintLayerInfo(key string, json bool, format string) error {
 	var cfg layer.Config
 	// var info layer.LayerInfo
 	type DumpInfo struct {
 		layer.LayerInfo
-		FileName string `json:"fileName"`
+		Layer string `json:"layer"`
 	}
 	var info DumpInfo
-	if Flag.Target != "" {
-		fmt.Println(Flag.Target)
-		return nil
-	}
+
 	if err := utils.LoadYamlFile(config.LinglongYaml, &cfg); err != nil {
 		return fmt.Errorf("读取linglong.yaml失败:%v", err)
 	}
@@ -269,9 +267,12 @@ func PrintLayerInfo(key string, json bool) error {
 	if err := info.ParseLayerInfo(cfg); err != nil {
 		return fmt.Errorf("linglong.yaml配置不合法:%v", err)
 	}
-	info.FileName = info.LayerInfo.FileName()
+	info.Layer = info.LayerInfo.FileName()
+	if Flag.Target != "" {
+		info.Layer = Flag.Target
+	}
 	var mapData map[string]interface{}
-	data, err := utils.DumpJsonData(info)
+	data, err := utils.DumpJsonDataIndent(info, "  ")
 	if err != nil {
 		return err
 	}
@@ -281,6 +282,13 @@ func PrintLayerInfo(key string, json bool) error {
 	}
 	if err := utils.LoadJsonData(data, &mapData); err != nil {
 		return err
+	}
+	if format != "" {
+		t, err := template.New("format").Parse(Flag.Format)
+		if err != nil {
+			return fmt.Errorf("解析format失败:%v", err)
+		}
+		return t.Execute(os.Stdout, mapData)
 	}
 	value, ok := mapData[key]
 	if !ok {
@@ -296,12 +304,12 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 	if ok {
 		return err
 	}
-	if Flag.PrintLayerName || Flag.Print != "" || Flag.PrintJson {
-		target := "fileName"
+	if Flag.Print != "" || Flag.PrintJson || Flag.Format != "" {
+		target := "layer"
 		if Flag.Print != "" {
 			target = Flag.Print
 		}
-		return PrintLayerInfo(target, Flag.PrintJson)
+		return PrintLayerInfo(target, Flag.PrintJson, Flag.Format)
 	}
 	return utils.SwitchTo("BuildLayer", &utils.SwitchFlags{
 		UID:           0,
@@ -331,11 +339,11 @@ func CreateBuildCommand() *cobra.Command {
 	cmd.Flags().IntVarP(&Flag.Gid, "force-gid", "G", os.Getegid(), "文件Gid,-1为不更改")
 	cmd.Flags().BoolVar(&Flag.NoPostSetup, "no-post-setup", false, "不对构建结果进行后处理")
 	cmd.Flags().BoolVar(&Flag.NoLayer, "no-layer", false, "不输出layer文件")
-	cmd.Flags().BoolVar(&Flag.PrintLayerName, "print-layer-name", false, "输出构建的layer文件名")
 	cmd.Flags().StringVar(&Flag.Print, "print", "", "输出应用参数后退出")
 	cmd.Flags().BoolVar(&Flag.PrintJson, "json", false, "输出应用参数的JSON格式后退出")
 	cmd.Flags().BoolVar(&Flag.Quiet, "quiet", false, "安静模式，构建前不输出项目信息")
 	cmd.Flags().StringVarP(&Flag.Target, "output", "o", "", "输出的layer文件名")
+	cmd.Flags().StringVarP(&Flag.Format, "format", "f", "", "格式化输出，字段详见json")
 	cmd.Flags().StringSliceVar(&Flag.PackArgs, "erofs-args", []string{}, "其他mkfs.erofs选项,逗号分隔")
 	cmd.Flags().SortFlags = false
 	return cmd
