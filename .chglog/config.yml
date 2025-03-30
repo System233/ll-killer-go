@@ -12,6 +12,7 @@ options:
       perf: 性能改进
       refactor: 代码重构
       break: 兼容性更改
+      revert: 撤销更改
       build: 构建系统
       chore: 代码调整
       improvement: 功能改进

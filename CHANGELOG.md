@@ -1,4 +1,12 @@
 
+<a name="v1.5.3"></a>
+## [v1.5.3](https://github.com/System233/ll-killer-go/compare/v1.5.2...v1.5.3) (2025-03-30)
+
+### 撤销更改
+
+* 撤销"允许自动化测试screensavers中的快捷方式"
+
+
 <a name="v1.5.2"></a>
 ## [v1.5.2](https://github.com/System233/ll-killer-go/compare/v1.5.1...v1.5.2) (2025-03-29)
 
