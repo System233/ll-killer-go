@@ -1,4 +1,13 @@
 
+<a name="v1.5.4"></a>
+## [v1.5.4](https://github.com/System233/ll-killer-go/compare/v1.5.3...v1.5.4) (2025-04-23)
+
+### 错误修复
+
+* 修复高版本玲珑下，因/tmp挂载调整导致的切换根目录失败。同时为了避免玲珑内置的符号剔除创建的lib文件夹引起的干扰，务必在commit时使用--skip-strip-symbols选项禁用该行为。
+* 删除文件的SUID/SGID权限
+
+
 <a name="v1.5.3"></a>
 ## [v1.5.3](https://github.com/System233/ll-killer-go/compare/v1.5.2...v1.5.3) (2025-03-30)
 
