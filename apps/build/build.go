@@ -65,6 +65,10 @@ func GetBuildArgs() []string {
 		args = append(args, "--rootfs", BuildFlag.RootFS)
 	}
 
+	if BuildFlag.TmpRootFS != "" {
+		args = append(args, "--tmp-rootfs", BuildFlag.TmpRootFS)
+	}
+
 	if BuildFlag.Runtime != "" {
 		args = append(args, "--runtime", BuildFlag.Runtime)
 	}
@@ -143,23 +147,23 @@ func MountOverlay() error {
 
 	err = utils.MountAll([]utils.MountOption{
 		{
-			Source: "sources.list.d",
+			Source: path.Join(BuildFlag.CWD, "sources.list.d"),
 			Target: lowerDir + "/etc/apt/sources.list.d",
 		},
 		{
-			Source: "sources.list",
+			Source: path.Join(BuildFlag.CWD, "sources.list"),
 			Target: lowerDir + "/etc/apt/sources.list",
 		},
 		{
-			Source: "apt.conf",
+			Source: path.Join(BuildFlag.CWD, "apt.conf"),
 			Target: lowerDir + "/etc/apt/apt.conf",
 		},
 		{
-			Source: "apt.conf.d",
+			Source: path.Join(BuildFlag.CWD, "apt.conf.d"),
 			Target: lowerDir + "/etc/apt/apt.conf.d",
 		},
 		{
-			Source: "auth.conf.d",
+			Source: path.Join(BuildFlag.CWD, "auth.conf.d"),
 			Target: lowerDir + "/etc/apt/auth.conf.d",
 		},
 	})
@@ -303,7 +307,7 @@ func BuildMain(cmd *cobra.Command, args []string) error {
 			encoded := base64.StdEncoding.EncodeToString([]byte(str))
 			encodedArgs = append(encodedArgs, encoded)
 		}
-		extArgs := []string{"ll-builder", target, "--exec", fmt.Sprintf("%s build --encoded-args %s", BuildFlag.Self, strings.Join(encodedArgs, ","))}
+		extArgs := []string{"ll-builder", target, "--exec", fmt.Sprintf("%s --debug=%s build --encoded-args %s", BuildFlag.Self, fmt.Sprint(utils.GlobalFlag.Debug), strings.Join(encodedArgs, ","))}
 		return utils.ExecRaw(extArgs...)
 	}
 }
@@ -331,7 +335,7 @@ func CreateBuildCommand() *cobra.Command {
 	cmd.Flags().StringVar(&BuildFlag.RootFS, "rootfs", "", "根文件系统")
 	cmd.Flags().StringVar(&BuildFlag.Runtime, "runtime", "", "runtime文件系统")
 	cmd.Flags().StringVar(&BuildFlag.HostFS, "hostfs", "/run/host/rootfs", "主机根目录路径")
-	cmd.Flags().StringVar(&BuildFlag.TmpRootFS, "tmp-rootfs", "/tmp/rootfs", "临时根目录路径")
+	cmd.Flags().StringVar(&BuildFlag.TmpRootFS, "tmp-rootfs", path.Join(os.Getenv("HOME"), ".cache/ll-killer-tmp"), "临时根目录路径")
 	cmd.Flags().StringVar(&BuildFlag.CWD, "cwd", cwd, "当前工作目录路径")
 	if _ptrace.IsSupported {
 		cmd.Flags().BoolVar(&BuildFlag.Ptrace, "ptrace", false, "修正系统调用(chown)")

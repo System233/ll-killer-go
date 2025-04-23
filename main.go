@@ -77,7 +77,7 @@ func main() {
 	app.Flags().SortFlags = false
 	app.InheritedFlags().SortFlags = false
 	app.LocalFlags().SortFlags = false
-	app.Flags().BoolVar(&utils.GlobalFlag.Debug, "debug", utils.GlobalFlag.Debug, "显示调试信息")
+	app.PersistentFlags().BoolVar(&utils.GlobalFlag.Debug, "debug", utils.GlobalFlag.Debug, "显示调试信息")
 	app.AddCommand(
 		_buildaux.CreateBuildAuxCommand(),
 		_create.CreateCreateCommand(),
