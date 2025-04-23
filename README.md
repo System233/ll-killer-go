@@ -45,6 +45,12 @@
     - [自定义流程文件](#自定义流程文件)
     - [其他特殊文件](#其他特殊文件)
 - [疑难解答](#疑难解答)
+    - [build环境内使用apt安装出现chown权限问题](#build环境内使用apt安装出现chown权限问题)
+    - [apt安装某些包时总是提示依赖不满足](#apt安装某些包时总是提示依赖不满足)
+    - [出现`fork/exec`操作不允许等问题](#出现forkexec操作不允许等问题)
+    - [玲珑1.7.11以上直接使用`ll-killer build`提示挂载文件失败](#玲珑1711以上直接使用ll-killer-build提示挂载文件失败)
+    - [某些应用在安装时出现 invalid mode 0104755 with bits 04000](#某些应用在安装时出现-invalid-mode-0104755-with-bits-04000)
+    - [应用运行出现 cannot execute: required file not found](#应用运行出现-cannot-execute-required-file-not-found)
 - [贡献与维护](#贡献与维护)
 - [许可](#许可)
 
@@ -321,15 +327,15 @@ Makefile中的某些选项需要安装相应的依赖，请仔细查看说明，
 
 ## 疑难解答
 
-**build环境内使用apt安装出现chown权限问题**  
+#### build环境内使用apt安装出现chown权限问题
  可以添加`--ptrace`参数解决。
 
-**apt安装某些包时总是提示依赖不满足**  
+#### apt安装某些包时总是提示依赖不满足 
 请确保`sources.list`中列出的源与玲珑`base`兼容，或更换`aptitude`命令来安装。
 
-**出现`fork/exec`操作不允许等问题**
+#### 出现`fork/exec`操作不允许等问题
 
-启用非特权命名空间功能
+如果系统没有安装过玲珑，需要手动启用非特权命名空间功能
 ```sh
 sudo sysctl -w kernel.unprivileged_userns_clone=1
 sudo sysctl -w user.max_user_namespaces=28633
@@ -337,13 +343,43 @@ sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
 ```
 
-**玲珑1.7.11以上直接使用`ll-killer build`提示挂载文件失败**
+<details>
+<summary>
+更多信息
+</summary>
+
+**以下内容适用于专业用户**
+
+如果问题仍旧出现，需要具体分析，可以设置环境变量`KILLER_DEBUG=1`来启用ll-killer的调试信息输出。
+`entrypoint.sh`相关问题可以通过删除脚本中的`--rootfs`参数来在shell中观察`/run/app.rootf`内的文件是否正常。
+
+</details>
+
+#### 玲珑1.7.11以上直接使用`ll-killer build`提示挂载文件失败
 
 该版本玲珑修改了`/tmp`文件系统，**ll-killer** 依赖 **tmpfs** 与主机通信。
 
-**解决办法:** 使用`Makefile`管理项目流程，并启用 `ENABLE_OSTREE=1` 功能，直接移除 `ll-builder` 依赖。
+**解决办法1:** 升级ll-killer版本到1.5.4或更高。
+
+**解决办法2:** 使用`Makefile`管理项目流程，并启用 `ENABLE_OSTREE=1` 功能，直接移除 `ll-builder` 依赖。
 
 **ll-builder** 在 **ll-killer** 环境中本身只是个base下载器，启用`ENABLE_OSTREE`选项，用 `build-aux/ostree.mk` 取代它。
+
+#### 某些应用在安装时出现 invalid mode 0104755 with bits 04000
+应用内某些文件设置了SUID/SGID所致，需要在构建时确保此类权限已经全部删除，可用使用`chmod a-s -R $PREFIX`命令递归的删除所有SUID/SGID权限。
+
+* **ll-killer v1.5.4** 起自动在准备文件系统阶段删除此类权限。
+
+
+#### 应用运行出现 cannot execute: required file not found
+
+这是某些目录被错误覆盖所致，ll-killer中，`$PREFIX`目录下的所有文件将叠加至容器根目录，请确保叠加方式正确，或`$PREFIX`下没有多余的文件。
+
+比如：玲珑版本1.7.x下ll-killer构建的应用可能出现bash: /entrypoint.sh: cannot execute: required file not found，原因是`ll-builer build`命令默认`--skip-strip-symbols`启用符号剔除，而该功能会在`$PREFIX`下创建lib目录放置某些调试文件，此lib文件夹会在ll-killer在准备根文件系统时覆盖掉/lib符号链接，造成所有应用无法启动。
+
+**解决办法:** 使用`ll-killer layer build`或在使用`ll-builder build`时添加`--skip-strip-symbols`选项来禁用符号剔除。
+
+**此问题的下一步计划:** 1.调整叠加目录的位置或结构，避免被lib之类的文件夹意外覆盖根目录；2. 重新设计叠加目录结构，增加无overlayfs和无mergefs的启动模式支持（无ll-killer模式）。
 
 ## 贡献与维护
 
