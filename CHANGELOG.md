@@ -1,4 +1,16 @@
 
+<a name="v1.5.5"></a>
+## [v1.5.5](https://github.com/System233/ll-killer-go/compare/v1.5.4...v1.5.5) (2025-04-24)
+
+### 兼容性更改
+
+* 默认禁用systemd服务导出
+
+### 错误修复
+
+* 仅导出应用自身的systemd服务
+
+
 <a name="v1.5.4"></a>
 ## [v1.5.4](https://github.com/System233/ll-killer-go/compare/v1.5.3...v1.5.4) (2025-04-23)
 
