@@ -51,6 +51,8 @@
     - [玲珑1.7.11以上直接使用`ll-killer build`提示挂载文件失败](#玲珑1711以上直接使用ll-killer-build提示挂载文件失败)
     - [某些应用在安装时出现 invalid mode 0104755 with bits 04000](#某些应用在安装时出现-invalid-mode-0104755-with-bits-04000)
     - [应用运行出现 cannot execute: required file not found](#应用运行出现-cannot-execute-required-file-not-found)
+    - [用户级systemd服务](#用户级systemd服务)
+    - [用户级dbus服务](#用户级dbus服务)
 - [贡献与维护](#贡献与维护)
 - [许可](#许可)
 
@@ -380,6 +382,34 @@ sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
 **解决办法:** 使用`ll-killer layer build`或在使用`ll-builder build`时添加`--skip-strip-symbols`选项来禁用符号剔除。
 
 **此问题的下一步计划:** 1.调整叠加目录的位置或结构，避免被lib之类的文件夹意外覆盖根目录；2. 重新设计叠加目录结构，增加无overlayfs和无mergefs的启动模式支持（无ll-killer模式）。
+
+#### 用户级systemd服务
+
+* 导出服务
+systemd服务导出默认已禁用，如需导出systemd服务，请运行此脚本：
+
+```sh
+# 导出指定包的systemd服务
+ll-killer build $PWD/build-aux/setup-systemd.sh <DEB包名>
+```
+如果是使用make管理的项目，添加或修改config.mk中的配置参数 `ENABLE_SETUP_SYSTEMD=1`来启用上述脚本。
+
+* 启动服务
+首先在应用内安装systemd，在ll-killer环境内（entrypoint.sh之后），每次运行应用都执行此命令：
+
+```sh
+systemctl --user daemon-reload # 刷新服务列表
+STATUS=$(systemctl --user is-active <服务名称>)
+
+if [ "$STATUS" != "active" ]; then
+  systemctl --user enable <服务名称> # 允许自动启动
+  systemctl --user start <服务名称>  # 立即启动服务
+fi
+```
+#### 用户级dbus服务
+
+默认导出容器内的dbus服务，位于$PREFIX/share/dbus-1中。
+由于低版本玲珑的XDG目录配置存在问题，可能存在与systemd类似的覆盖主机dbus服务问题，尚未深入分析。
 
 ## 贡献与维护
 
