@@ -55,13 +55,6 @@ if [ -d "$PREFIX/share/applications/context-menus" ]; then
     find "$PREFIX/share/applications/context-menus" -name "*.conf" -exec "setup-desktop.sh" "{}" \;
 fi
 
-if [ -d "$PREFIX/etc/systemd" ]; then
-    echo "[配置服务单元]"
-    find "$PREFIX/share/systemd" -name "*.service" -type f -exec "setup-systemd.sh" "{}" \;
-    find "$PREFIX/etc/systemd" -name "*.service" -type f -exec "setup-systemd.sh" "{}" \;
-    find "$PREFIX/lib/systemd" -name "*.service" -type f -exec "setup-systemd.sh" "{}" \;
-fi
-
 if [ -d "$PREFIX/share/dbus-1/services" ]; then
     echo "[配置Dbus服务]"
     find "$PREFIX/share/dbus-1/services" -name "*.service" -type f -exec "setup-dbus.sh" "{}" \;

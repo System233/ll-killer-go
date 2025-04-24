@@ -20,6 +20,7 @@ CREATE_ARGS ?=
 ENABLE_LDD_CHECK ?= 1
 ENABLE_INSTALL ?=1
 ENABLE_RM_DESKTOP ?= $(ENABLE_INSTALL)
+ENABLE_SETUP_SYSTEMD ?= $(ENABLE_INSTALL)
 ENABLE_PTRACE ?=1
 ENABLE_OSTREE ?=0
 ENABLE_TEST_NOCLI ?=0
@@ -30,6 +31,7 @@ SOURCES_LIST = sources.list
 UPDATE_TARGET ?= apt-update.log
 INSTALL_TARGET ?= apt-install.log
 RM_DESKTOP_TARGET ?= rm-desktop.log
+SETUP_SYSTEMD_TARGET ?= setup-systemd.log
 BUILD_TARGET ?= build.log
 POST_BUILD_TARGET ?= post-build.log
 PKG_INFO ?= pkg.info
@@ -106,6 +108,10 @@ ifeq ($(ENABLE_RM_DESKTOP),1)
 	LAYER_DEP += $(RM_DESKTOP_TARGET)
 endif
 
+ifeq ($(ENABLE_SETUP_SYSTEMD),1)
+	LAYER_DEP += $(SETUP_SYSTEMD_TARGET)
+endif
+
 KILLER_BUILD_ARGS = $(BUILD_ARGS) $(OSTREE_BUILD_ARGS)
 KILLER_CREATE_ARGS = $(CREATE_ARGS) $(OSTREE_CREATE_ARGS)
 
@@ -127,6 +133,7 @@ config:
 	@echo "ENABLE_OSTREE ?= $(ENABLE_OSTREE)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_TEST_NOCLI ?= $(ENABLE_TEST_NOCLI)" >> $(CONFIG_TARGET)
 	@echo "ENABLE_RM_DESKTOP ?= $(ENABLE_RM_DESKTOP)" >> $(CONFIG_TARGET)
+	@echo "ENABLE_SETUP_SYSTEMD ?= $(ENABLE_SETUP_SYSTEMD)" >> $(CONFIG_TARGET)
 	@echo "LDD_CHECK_MODE ?= $(LDD_CHECK_MODE)" >> $(CONFIG_TARGET)
 	@echo "UPDATE_TARGET ?= $(UPDATE_TARGET)" >> $(CONFIG_TARGET)
 	@echo "INSTALL_TARGET ?= $(INSTALL_TARGET)" >> $(CONFIG_TARGET)
@@ -189,17 +196,22 @@ $(POST_BUILD_TARGET): $(INSTALL_DEP) $(EXTRA_POST_BUILD)
 
 $(LDD_CHECK_TARGET):  $(INSTALL_DEP) $(EXTRA_POST_BUILD_TARGET) build-aux/ldd-check.sh
 	@echo "[检查缺失库]"
-	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/ldd-check.sh $(LDD_CHECK_MODE) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- $(PWD)/build-aux/ldd-check.sh $(LDD_CHECK_MODE) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(RM_DESKTOP_TARGET): $(BUILD_RESULT_TARGET)
 	@echo "[删除不属于主包的快捷方式]"
-	$(KILLER) build $(KILLER_BUILD_ARGS) -- build-aux/rm-desktop.sh $(PKGID) $(APPEND_LOG)
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- $(PWD)/build-aux/rm-desktop.sh $(PKGID) $(APPEND_LOG)
+	$(MOVE_LOG)
+
+$(SETUP_SYSTEMD_TARGET): $(BUILD_RESULT_TARGET)
+	@echo "[导出主包的systemd服务]"
+	$(KILLER) build $(KILLER_BUILD_ARGS) -- $(PWD)/build-aux/setup-systemd.sh $(PKGID) $(APPEND_LOG)
 	$(MOVE_LOG)
 
 $(LDD_FOUND_TARGET) $(LDD_NOTFOUND_TARGET): $(LDD_CHECK_TARGET) build-aux/ldd-search.sh
 	@echo "[搜索缺失库所在包]"
-	$(KILLER) apt -- build-aux/ldd-search.sh $(LDD_CHECK_TARGET) $(LDD_FOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)~
+	$(KILLER) apt -- $(PWD)/build-aux/ldd-search.sh $(LDD_CHECK_TARGET) $(LDD_FOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)~
 	@mv -f $(LDD_FOUND_TARGET)~ $(LDD_FOUND_TARGET)
 	@mv -f $(LDD_NOTFOUND_TARGET)~ $(LDD_NOTFOUND_TARGET)
 

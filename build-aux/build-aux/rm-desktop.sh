@@ -2,6 +2,7 @@
 
 # 检查是否提供了包名
 if [[ -z "$1" ]]; then
+    echo "删除不属于指定包的desktop文件"
     echo "用法: $0 <deb包名>"
     exit 1
 fi
